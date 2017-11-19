@@ -10,13 +10,13 @@ output:
 
 ### Laden der nötigen Bibliotheken.
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-source("R_input_lib_s.R")
+source("01-Bibliotheken-laden.R")
 ```
 
 ###Zur Auswertung werden einige Funktionen benötigt, die hier definiert werden.
 ```{r}
 #  rolling functions bilden und anhängen
-source("R_roll_fu_def.R")
+source("02-Funktionen-bilden.R")
 # --------------------------------------------------------------------------
 ```
 ### Einlesen der Dateien "Daten_dd_mm_yyyy.csv": 
@@ -32,7 +32,7 @@ Die Zeilen müssen sortiert werden, weil die Dateien nicht in der korrekten zeit
 
 ```{r}
 # Einlesen der Datenfiles-----benoetigt rolling functions----------------------
-source("R_input_files.R")
+source("03-Files-einlesen.R")
 #------------------------------------------------------------------------------
 ```
 
