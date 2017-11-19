@@ -1,0 +1,230 @@
+---
+title: "PV - Wirkungsgrad"
+output:
+  html_notebook: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+### Laden der nötigen Bibliotheken.
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+source("R_input_lib_s.R")
+```
+
+###Zur Auswertung werden einige Funktionen benötigt, die hier definiert werden.
+```{r}
+#  rolling functions bilden und anhängen
+source("R_roll_fu_def.R")
+# --------------------------------------------------------------------------
+```
+### Einlesen der Dateien "Daten_dd_mm_yyyy.csv": 
+
+Die Daten liegen tageweise vor, sie enthalten Datensätze (Zeilen), die im 5-Minuten-Rhythmus erfasst werden. Beim Einlesen werden sie zusammengefügt.
+Spalten:
+leistung.pv ,leistung.stp, netzeinspeisung, netzbezug, batt_ladung, batt_entladung, ladezustand
+
+Die beiden ersten Werte sind identisch, deswegen wird "leistung.stp"" sofort gelöscht. 
+
+Alle in der Einheit W, mit Ausnahme von 'ladezustand', dieser wird beim Lesen als Prozentsatz übergeben und anschließend auf $10000 = 100 \%$ normiert weil die Batterie eine Kapazität von annähernd $10 kWh$ besitzt, kann dies auch als $Wh$ gelesen werden.
+Die Zeilen müssen sortiert werden, weil die Dateien nicht in der korrekten zeitlichen Reihenfolge eingelesen werden.
+
+```{r}
+# Einlesen der Datenfiles-----benoetigt rolling functions----------------------
+source("R_input_files.R")
+#------------------------------------------------------------------------------
+```
+
+### Zur Vorbereitung werden einige Spalten gelöscht, ergänzt, einige neu normiert:
+
+a)  Die neue Spalte 'ct' zaehlt die Datenzeilen 
+b)  Über 'ladezustand' laeuft eine Glaettungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
+c) 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
+d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand und dem vorangegangenen berechnet (Einheit Wh).
+e) 'batt_ladung' und 'bat_entladung' werden von W in Wh umgerechnet (W in der Zeit 5 min, deswegen Division durch 12)
+
+Anm.: 
+In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung $P$ führt zu einer el. Arbeit von $P 
+\cdot 5 min$ im Zeitintervall $t \pm 2,5 min $ [pm wird nicht angezeigt]
+
+```{r}
+# Ergaenzende Spaltenoperationen ----------------------------------------------
+source("Erg_Spalten_Op.R")
+# -----------------------------------------------------------------------------
+```
+
+### Festlegen von Arbeitsdaten und Initialiserung weiterer Variablen
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# Arbeitsdaten festlegen
+proj_level <- tibble() # Initialisierung einer Variablen, die zur Erzeugung von Plots dient
+```
+
+"level"" legt die Höhe des Ladezustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
+
+```{r}
+level <- 5000   # ..%-Level
+```
+
+### Tägliche Minima und Maxima identifizieren  - optional
+
+```{r}
+# Minima und MAxima markieren
+ source("R_Min_Max_mark.R")
+#-----------------------------------------------------------------------------------
+```
+
+## Perioden zwischen horizontalen Niveaus bilden
+
+```{r}
+# NEU_ Perioden zwischen horizontalen Niveaus bilden NEU
+source("form_level_pd.R")
+#-----------------------------------------------------------------------------------
+# Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
+source("Lade_Entlade_Sum_bilden.R")
+#------------------------------------------------------------------------------------
+```
+
+### Graphische Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz
+
+Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speicher in einer Halbperiode dividiert durch die Dauer der Halbperiode wird als (Energie-)Durchsatz bezeichnet angegeben in Wh/h.
+'lev' bezeichnet dem gewählten level dividiert durch 1000.
+
+
+```{r warning=FALSE}
+source("Proj_Ergeb_Level.R", print.eval=TRUE) 
+```
+
+
+Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung 
+
+```{r}
+some_levels <- c(4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
+proj_level <- tibble()
+for ( i in some_levels) {
+    level <- i  
+    source("form_level_pd.R")
+    #-----------------------------------------------------------------------------------
+    # Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
+    source("Lade_Entlade_Sum_bilden.R")
+    #------------------------------------------------------------------------------------
+    proj_level_new <- data %>%
+    ungroup() %>% 
+    group_by(levelpd) %>%
+    slice(1) %>%
+    ungroup()
+    proj_level <- rbind(proj_level, proj_level_new)
+}
+proj_level %>% 
+   filter(eta  != 0) %>% 
+   filter(eta <= 10000) %>% 
+   ggplot(aes(x = durchsatz/1000, y = eta)) + 
+   geom_point(aes(x = durchsatz/1000, y = eta, color=lev)) +
+   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum )) +
+   labs(
+      x = "Durchsatz in kWh/h",
+      y = "Wirkungsgrad * 1000",
+      color = "level"
+   )                                         #+
+   #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) #+
+   #facet_wrap(~ level)
+ 
+
+
+```
+
+
+
+
+
+
+### Graphische Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode
+
+```{r message=TRUE, warning=TRUE}
+source("Proj_Level_Eta_vs_mit_level.R", print.eval=TRUE) 
+```
+
+
+### Das Gleiche mit Aufsammeln von Daten zu mehreren Levels
+
+Wirkungsgrade eta=0 werden ausgeblendet.
+
+```{r}
+some_levels <- c(4000, 4500, 5000, 6000,7000,8000, 9000)
+proj_level <- tibble()
+for ( i in some_levels) {
+# NEU_ Perioden zwischen horizontalen Niveaus bilden NEU
+level <- i  
+source("form_level_pd.R")
+#-----------------------------------------------------------------------------------
+# Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
+source("Lade_Entlade_Sum_bilden.R")
+#------------------------------------------------------------------------------------
+proj_level_new <- data %>%
+  ungroup() %>% 
+  group_by(levelpd) %>%
+  slice(1) %>%
+  ungroup()
+proj_level <- rbind(proj_level, proj_level_new)
+}
+proj_level %>% 
+   filter(eta  != 0) %>% 
+   ggplot(aes(x = mit_level, y = eta)) + 
+   geom_point(aes(x = mit_level, y = eta, color=signum)) +
+   geom_smooth(mapping = aes(x = mit_level, y = eta, linetype = signum )) +
+   #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) +
+   facet_wrap(~ signum)
+ 
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
