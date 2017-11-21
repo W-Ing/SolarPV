@@ -7,6 +7,7 @@ output:
     df_print: paged
   word_document: default
 ---
+# Vorbereitungen
 
 ### Laden der nötigen Bibliotheken.
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -45,12 +46,12 @@ d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand 
 e) 'batt_ladung' und 'bat_entladung' werden von W in Wh umgerechnet (W in der Zeit 5 min, deswegen Division durch 12)
 
 Anm.: 
-In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung $P$ führt zu einer el. Arbeit von $P 
-\cdot 5 min$ im Zeitintervall $t \pm 2,5 min $ [pm wird nicht angezeigt]
+In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung P führt zu einer el. Arbeit von P.5min im Zeitintervall 
+t plus/minus 2,5 min
 
 ```{r}
 # Ergaenzende Spaltenoperationen ----------------------------------------------
-source("Erg_Spalten_Op.R")
+source("03-Spalten-bearbeiten.R")
 # -----------------------------------------------------------------------------
 ```
 
@@ -67,53 +68,58 @@ proj_level <- tibble() # Initialisierung einer Variablen, die zur Erzeugung von 
 level <- 5000   # ..%-Level
 ```
 
-### Tägliche Minima und Maxima identifizieren  - optional
+#  Auswertungen  
+## Tägliche Minima und Maxima identifizieren  - optional
 
 ```{r}
-# Minima und MAxima markieren
- source("R_Min_Max_mark.R")
+# Minima und MAxima markieren frueher R_Min_Max_mark.R
+ source("04_Auswertungen_Min_Max_tgl_Per.R")
 #-----------------------------------------------------------------------------------
+```
+```{r}
+# Minima und MAxima markieren frueher R_Min_Max_mark.R
+ source("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R")
 ```
 
 ## Perioden zwischen horizontalen Niveaus bilden
 
 ```{r}
-# NEU_ Perioden zwischen horizontalen Niveaus bilden NEU
-source("form_level_pd.R")
+# NEU_ Perioden zwischen horizontalen Niveaus bilden NEU form_level_pd.R
+source("04_Auswertungen_gen_Per_zu_horiz_Niv.R")
 #-----------------------------------------------------------------------------------
-# Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
-source("Lade_Entlade_Sum_bilden.R")
+# Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren Lade_Entlade_Sum_bilden.R
+source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R")
 #------------------------------------------------------------------------------------
 ```
-
-### Graphische Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz
+# Graphische Auswertungen
+## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz
 
 Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speicher in einer Halbperiode dividiert durch die Dauer der Halbperiode wird als (Energie-)Durchsatz bezeichnet angegeben in Wh/h.
 'lev' bezeichnet dem gewählten level dividiert durch 1000.
 
 
 ```{r warning=FALSE}
-source("Proj_Ergeb_Level.R", print.eval=TRUE) 
+#-------------------------------------------------------- Proj_Ergeb_Level.R
+source("05_Grafik_Vs_Durchsatz.R", print.eval=TRUE) 
 ```
 
 
 Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung 
 
 ```{r}
-some_levels <- c(4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
+some_levels <- c(2000, 3000, 4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
 proj_level <- tibble()
-for ( i in some_levels) {
+for ( i in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro PEriode
     level <- i  
-    source("form_level_pd.R")
+    source("04_Auswertungen_gen_Per_zu_horiz_Niv.R")
     #-----------------------------------------------------------------------------------
     # Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
-    source("Lade_Entlade_Sum_bilden.R")
+    source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R")
     #------------------------------------------------------------------------------------
-    proj_level_new <- data %>%
-    ungroup() %>% 
-    group_by(levelpd) %>%
-    slice(1) %>%
-    ungroup()
+    # Einen Datensatz reduzieren auf je einen Satz pro levelpd
+    source("04_Auswertungen_Proj_1_wert_pro_levelpd.R")
+    #-------------------------------------------------------------------------------------
+    # Die Auswertungen zu einem Datensatz verbinden
     proj_level <- rbind(proj_level, proj_level_new)
 }
 proj_level %>% 
@@ -129,9 +135,6 @@ proj_level %>%
    )                                         #+
    #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) #+
    #facet_wrap(~ level)
- 
-
-
 ```
 
 
@@ -139,39 +142,37 @@ proj_level %>%
 
 
 
-### Graphische Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode
+## Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode
 
 ```{r message=TRUE, warning=TRUE}
-source("Proj_Level_Eta_vs_mit_level.R", print.eval=TRUE) 
+# --------------------------------------------------------------- Proj_Level_Eta_vs_mit_level.R
+source("05_Grafik_Eta_vs_Mitte.R", print.eval=TRUE) 
 ```
 
 
 ### Das Gleiche mit Aufsammeln von Daten zu mehreren Levels
 
-Wirkungsgrade eta=0 werden ausgeblendet.
+Wirkungsgrade eta=0 oder eta > 10000 werden ausgeblendet.
 
 ```{r}
-some_levels <- c(4000, 4500, 5000, 6000,7000,8000, 9000)
+some_levels <- c(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
 proj_level <- tibble()
-for ( i in some_levels) {
-# NEU_ Perioden zwischen horizontalen Niveaus bilden NEU
-level <- i  
-source("form_level_pd.R")
-#-----------------------------------------------------------------------------------
-# Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
-source("Lade_Entlade_Sum_bilden.R")
-#------------------------------------------------------------------------------------
-proj_level_new <- data %>%
-  ungroup() %>% 
-  group_by(levelpd) %>%
-  slice(1) %>%
-  ungroup()
-proj_level <- rbind(proj_level, proj_level_new)
+for (level in some_levels) {
+   # Perioden zwischen horizontalen Niveaus bilden 
+   source("04_Auswertungen_gen_Per_zu_horiz_Niv.R")
+   #-----------------------------------------------------------------------------------
+   # Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
+   source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R")
+   #------------------------------------------------------------------------------------
+   # Einen Datensatz reduzieren auf je einen Satz pro levelpd
+   source("04_Auswertungen_Proj_1_wert_pro_levelpd.R")
+   #-------------------------------------------------------------------------------------
+   proj_level <- rbind(proj_level, proj_level_new)
 }
 proj_level %>% 
-   filter(eta  != 0) %>% 
+   filter(eta  != 0 & eta <= 10000) %>% 
    ggplot(aes(x = mit_level, y = eta)) + 
-   geom_point(aes(x = mit_level, y = eta, color=signum)) +
+   geom_point(aes(x = mit_level, y = eta, color=lev)) +
    geom_smooth(mapping = aes(x = mit_level, y = eta, linetype = signum )) +
    #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) +
    facet_wrap(~ signum)
