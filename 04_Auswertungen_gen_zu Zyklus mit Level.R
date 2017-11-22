@@ -7,7 +7,7 @@
 cat("04_Auswertungen_gen_zu Zyklus mit Level ", level , "\n")
 
 zyklus_daten_gen <- function(xdata, l){     # xdata ist der - Datenfile Typ tibble
-                                             # l der zu bearbeitende Level
+                                            # l der zu bearbeitende Level
   
   xdata <- xdata %>% 
     mutate(pe           = (ladezustand == l),       # e =equal d =down u = up

@@ -2,7 +2,9 @@
 title: "PV - Wirkungsgrad"
 output:
   html_notebook: default
-  pdf_document: default
+  pdf_document: 
+    toc: true
+    number_sections: true
   html_document: 
   df_print: paged
   word_document: default
@@ -83,7 +85,7 @@ Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (spä
 
 Vorerst
 ```{r}
-level <- 5000   # ..%-Level
+level <- 7123   # ..%-Level
 ```
 
 ### Bildung der Grundfunktionen
@@ -110,9 +112,9 @@ lev
 source("04_Auswertungen_gen_zu Zyklus mit Level.R",local=TRUE)
 #-----------------------------------------------------------------------------------
 # Ladung und Entladung in jedem Zyklus addieren 04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R
-source("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus.R",local=TRUE)
+source("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus.R")
 #------------------------------------------------------------------------------------
-source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE)
+source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbose = getOption("verbose"))
 
 ```
 
@@ -125,7 +127,7 @@ Dazu wird folgende Funktion definiert
 zyklen_bilden <- function(xdata, x) {
   cat("zyklen bilden zu Level", x, "\n")
   level <-x
-  xdata = zyklus_daten_gen(xdata, level)
+  xdata = zyklus_daten_gen(xdata, x)
   xdata = zyklus_summen_gen(xdata)
   red_data = zyklus_reduzieren(xdata)
   return(red_data)
@@ -146,6 +148,9 @@ Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speich
 ```{r fig.height=5, fig.width=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 #-------------------------------------------------------- 
 # Auswertung der Halbperioden
+
+temp = zyklus_daten_gen(data, 7000)
+temp = zyklus_summen_gen(temp, 7000)
 
 proj_level = zyklen_bilden(data, 7000)
 
@@ -173,7 +178,7 @@ Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung
 
 ```{r paged.print=FALSE}
 #some_levels <- c(2000, 3000, 4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
-some_levels <- c(5000,6000, 7000)
+some_levels <- c(5000, 7000)
 proj_level <- tibble()
 for ( level in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
   proj_level <- rbind(proj_level, zyklen_bilden(data, level))
@@ -217,9 +222,9 @@ proj_level %>%
    filter(eta  != 0 & eta <= 10000) %>% 
    ggplot(aes(x = mit_level, y = eta)) + 
    geom_point(aes(x = mit_level, y = eta, color=lev)) +
-   geom_smooth(mapping = aes(x = mit_level, y = eta, linetype = signum )) +
+   geom_smooth(mapping = aes(x = mit_level, y = eta, linetype = signum )) #+
    #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) +
-   facet_wrap(~ signum)
+   #facet_wrap(~ signum)
  
 
 

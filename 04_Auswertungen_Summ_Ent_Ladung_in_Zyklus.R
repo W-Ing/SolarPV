@@ -5,10 +5,10 @@
 # 
 #   Perioden zwischen Schnitten mit level-Wert auswerten
 
-cat("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus", level , "\n")
 
-zyklus_summen_gen <- function(xdata){   # xdata ist der - Datenfile Typ tibble
-                                           
+
+zyklus_summen_gen <- function(xdata,l){   # xdata ist der - Datenfile Typ tibble
+  cat("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus", level , "\n")                                           
 xdata <- xdata %>% 
    ungroup() %>%  # 
    mutate(tmp_bat_in  = batt_ladung,
@@ -44,7 +44,7 @@ xdata <- xdata %>%
          mit_level = (min_level+max_level)/2,
          durchsatz = hub_level/len_levelpd*12,                             # Durchsatz = Wh zwischen Min und Max / Stunde
          signum    = as.character(ifelse(max_level > level, "UP","DOWN")),
-         lev       = level/1000
+         lev       = l/1000
          ) %>%     
   ungroup()
 
