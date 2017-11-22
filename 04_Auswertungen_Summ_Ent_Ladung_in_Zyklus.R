@@ -10,7 +10,7 @@ cat("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus", level , "\n")
 zyklus_summen_gen <- function(xdata){   # xdata ist der - Datenfile Typ tibble
                                            
 xdata <- xdata %>% 
-   ungroup(xdata) %>%  # 
+   ungroup() %>%  # 
    mutate(tmp_bat_in  = batt_ladung,
           tmp_bat_in  = ifelse(lead(len_levelpd)  == 1, tmp_bat_in  + lead(batt_ladung)/2   ,tmp_bat_in), 
           tmp_bat_in  = ifelse(lag( len_levelpd)  == 1, tmp_bat_in  + lag(batt_ladung)/2    ,tmp_bat_in), 
@@ -25,7 +25,7 @@ xdata <- xdata %>%
 
 
 xdata <- xdata %>% 
-         ungroup(xdata) %>% 
+         ungroup() %>% 
          group_by(levelpd) %>% 
    mutate(lev_bat_in = sum(tmp_bat_in),      
           lev_bat_out= sum(tmp_bat_out),
@@ -36,7 +36,7 @@ xdata <- xdata %>%
     select(-one_of("tmp_bat_out", "tmp_bat_in"))
 
 xdata <- xdata %>% 
-   ungroup(xdata) %>% 
+   ungroup() %>% 
    group_by(levelpd) %>% 
    mutate(max_level = max(ladezustand),
          min_level = min(ladezustand),

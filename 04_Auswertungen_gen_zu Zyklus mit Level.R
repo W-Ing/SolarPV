@@ -22,7 +22,7 @@ zyklus_daten_gen <- function(xdata, l){     # xdata ist der - Datenfile Typ tibb
   
   xdata <- xdata %>% 
     ungroup() %>% 
-    mutate(lpd      = cumsum(s))
+    mutate(levelpd      = cumsum(s))
   
   xdata <- xdata %>% 
     ungroup() %>% 

@@ -89,17 +89,33 @@ level <- 5000   # ..%-Level
 ### Bildung der Grundfunktionen
 
 Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe von data und l zur Übergabe des Levels
+Erzeugt Spalten
 
-Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data und
+levelpd und 
+len_of_levelpd
+
+Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data 
+
+Erzeugt 
+max_level = max(ladezustand),
+min_level = min(ladezustand),
+hub_level = max_level - min_level,
+mit_level = (min_level+max_level)/2,
+durchsatz = hub_level/len_levelpd*12,                             # Durchsatz = Wh zwischen Min und Max / Stunde
+signum    = as.character(ifelse(max_level > level, "UP","DOWN")),
+lev   
 
 ```{r include=FALSE}
 # NEU_ Perioden zwischen horizontalen Niveaus identifizieren
-source("04_Auswertungen_gen_zu Zyklus mit Level.R")
+source("04_Auswertungen_gen_zu Zyklus mit Level.R",local=TRUE)
 #-----------------------------------------------------------------------------------
 # Ladung und Entladung in jedem Zyklus addieren 04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R
-source("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus.R")
+source("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus.R",local=TRUE)
 #------------------------------------------------------------------------------------
+source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE)
+
 ```
+
 
 ### Zusammenfassung dieses Vorgangs ###
 
@@ -111,10 +127,7 @@ zyklen_bilden <- function(xdata, x) {
   level <-x
   xdata = zyklus_daten_gen(xdata, level)
   xdata = zyklus_summen_gen(xdata)
-  #source("04_Auswertungen_gen_zu Zyklus mit Level.R", local=TRUE)
-  #source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R", local=TRUE)
-  source("04_Auswertungen_Proj_1_wert_pro_levelpd.R", local=TRUE)
-  red_data = zyklus_summen_gen(xdata)
+  red_data = zyklus_reduzieren(xdata)
   return(red_data)
 }
 
@@ -134,9 +147,7 @@ Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speich
 #-------------------------------------------------------- 
 # Auswertung der Halbperioden
 
-#cat ("Auswerten der Zyklen", level," \n")
-
-proj_level <- zyklen_bilden(data, 5000)
+proj_level = zyklen_bilden(data, 7000)
 
 proj_level <- proj_level %>% 
   filter(eta > 0 & eta <= 10000) %>% 
@@ -160,9 +171,9 @@ proj_level %>%
 
 Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung 
 
-```{r}
+```{r paged.print=FALSE}
 #some_levels <- c(2000, 3000, 4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
-some_levels <- c(4000, 5000,6000, 7000)
+some_levels <- c(5000,6000, 7000)
 proj_level <- tibble()
 for ( level in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
   proj_level <- rbind(proj_level, zyklen_bilden(data, level))
