@@ -47,7 +47,8 @@ data <- data %>%
    group_by(daypd) %>% 
    mutate(len_daypd = max(ct)-min(ct)+1)
 
-data <- data %>% select(-one_of("tmp","tgl_min_median","tgl_max_median","roll_min","roll_max"))
+data <- data %>% 
+   select(-one_of("tmp","tgl_min_median","tgl_max_median","roll_min","roll_max"))
 
 #
 # Voraussetzungen daypd und levelpd schon gebildet
@@ -59,8 +60,8 @@ data <- data %>%
   group_by(daypd) %>%
   mutate(day_bat_in = sum(batt_ladung),      #Umrechnung W in 5 min auf Wh nicht mehr noetig
          day_bat_out= sum(batt_entladung),
-         day_period_ladehub = sum(ladediff))
-
+         day_period_ladehub = sum(ladediff)) %>% 
+  ungroup(data) 
 
 
 

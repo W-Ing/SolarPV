@@ -3,146 +3,188 @@ title: "PV - Wirkungsgrad"
 output:
   html_notebook: default
   pdf_document: default
-  html_document:
-    df_print: paged
+  html_document: 
+  df_print: paged
   word_document: default
 ---
-# Vorbereitungen
 
-### Laden der nötigen Bibliotheken.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Geladen werden die Daten, die von der PV-Anlage mit Hilfe des SMA-Portals gewonnen werden.
+Ziel ist es, in der Tabelle _data_ alle Datensätze aus den SMA-Daten, ergänzt um Hilfsgrößen, zur Verfügung zu stellen.
+
+Die Daten liegen in Dateien tageweise vor, beim Download werden diese von Hand benannt, sie enthalten Datensätze (Zeilen), die im 5-Minuten-Rhythmus erfasst wurden. Beim Einlesen werden sie zusammengefügt.
+
+Die Datensätze enthalten die Größen
+
+leistung.pv  ---  leistung.stp  ---  netzeinspeisung ---  netzbezug  --- batt_ladung  ---  batt_entladung ---  ladezustand
+
+Die beiden ersten Werte sind identisch, deswegen wird "leistung.stp"" in der Folge sofort gelöscht. 
+
+
+# Vorbereitungen #
+
+### Laden der nötigen Bibliotheken. ###
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 source("01-Bibliotheken-laden.R")
 ```
 
-###Zur Auswertung werden einige Funktionen benötigt, die hier definiert werden.
+###Zur Auswertung werden einige Funktionen benötigt, die hier definiert werden. ###
 ```{r}
-#  rolling functions bilden und anhängen
 source("02-Funktionen-bilden.R")
-# --------------------------------------------------------------------------
 ```
-### Einlesen der Dateien "Daten_dd_mm_yyyy.csv": 
 
-Die Daten liegen tageweise vor, sie enthalten Datensätze (Zeilen), die im 5-Minuten-Rhythmus erfasst werden. Beim Einlesen werden sie zusammengefügt.
-Spalten:
-leistung.pv ,leistung.stp, netzeinspeisung, netzbezug, batt_ladung, batt_entladung, ladezustand
-
-Die beiden ersten Werte sind identisch, deswegen wird "leistung.stp"" sofort gelöscht. 
-
-Alle in der Einheit W, mit Ausnahme von 'ladezustand', dieser wird beim Lesen als Prozentsatz übergeben und anschließend auf $10000 = 100 \%$ normiert weil die Batterie eine Kapazität von annähernd $10 kWh$ besitzt, kann dies auch als $Wh$ gelesen werden.
+### Einlesen der Dateien "Daten_dd_mm_yyyy.csv": ###
+Alle Größen in der Einheit W, mit Ausnahme von 'ladezustand', dieser wird beim Lesen als Prozentsatz übergeben und anschließend auf $10000 = 100 \%$ normiert weil die Batterie eine Kapazität von annähernd $10 kWh$ besitzt kann dies auch als $Wh$ gelesen werden.
 Die Zeilen müssen sortiert werden, weil die Dateien nicht in der korrekten zeitlichen Reihenfolge eingelesen werden.
-
 ```{r}
-# Einlesen der Datenfiles-----benoetigt rolling functions----------------------
+# Einlesen der Datenfiles-----notig: 02-Funktionen-bilden.R----------------------
 source("03-Files-einlesen.R")
-#------------------------------------------------------------------------------
 ```
 
-### Zur Vorbereitung werden einige Spalten gelöscht, ergänzt, einige neu normiert:
+### Einige Spalten werden erzeugt, gelöscht, bearbeitet und z.B. neu normiert:###
 
 a)  Die neue Spalte 'ct' zaehlt die Datenzeilen 
 b)  Über 'ladezustand' laeuft eine Glaettungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
 c) 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
 d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand und dem vorangegangenen berechnet (Einheit Wh).
-e) 'batt_ladung' und 'bat_entladung' werden von W in Wh umgerechnet (W in der Zeit 5 min, deswegen Division durch 12)
-
-Anm.: 
-In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung P führt zu einer el. Arbeit von P.5min im Zeitintervall 
-t plus/minus 2,5 min
+e) 'batt_ladung' und 'bat_entladung' werden von W in Wh umgerechnet (W in der Zeit 5 min, deswegen Division durch 12). Anm.: In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung P führt zu einer el. Arbeit von $P\cdot 5 \mbox{min}$ im Zeitintervall $t \pm 2,5 \mbox{min}$
 
 ```{r}
 # Ergaenzende Spaltenoperationen ----------------------------------------------
 source("03-Spalten-bearbeiten.R")
-# -----------------------------------------------------------------------------
 ```
 
-### Festlegen von Arbeitsdaten und Initialiserung weiterer Variablen
+#  Auswertungen # 
+
+## Tägliche Minima und Maxima identifizieren  - optional ##
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-# Arbeitsdaten festlegen
-proj_level <- tibble() # Initialisierung einer Variablen, die zur Erzeugung von Plots dient
-```
-
-"level"" legt die Höhe des Ladezustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
-
-```{r}
-level <- 5000   # ..%-Level
-```
-
-#  Auswertungen  
-## Tägliche Minima und Maxima identifizieren  - optional
-
-```{r}
 # Minima und MAxima markieren frueher R_Min_Max_mark.R
  source("04_Auswertungen_Min_Max_tgl_Per.R")
 #-----------------------------------------------------------------------------------
 ```
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 # Minima und MAxima markieren frueher R_Min_Max_mark.R
  source("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R")
 ```
 
-## Perioden zwischen horizontalen Niveaus bilden
+## Perioden zwischen horizontalen Niveaus bilden - Neutrale Zyklen ##
 
+Ein _neutraler Zyklus_ ist eine Lade-Entlade-Vorgang der von einem Ladezustand des Akkus ausgehend zu diesem zurückkehrt.
+Für diese ist es sinnvoll, Wirkungsgrade als Verhältnis von Output zu Input zu bilden.
+
+"level"" legt die Höhe des Ausgangszustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
+Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (später mit UP bzw. DOWN gekennzeichnet). 
+
+Vorerst
 ```{r}
-# NEU_ Perioden zwischen horizontalen Niveaus bilden NEU form_level_pd.R
-source("04_Auswertungen_gen_Per_zu_horiz_Niv.R")
+level <- 5000   # ..%-Level
+```
+
+### Bildung der Grundfunktionen
+
+Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe von data und l zur Übergabe des Levels
+
+Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data und
+
+```{r include=FALSE}
+# NEU_ Perioden zwischen horizontalen Niveaus identifizieren
+source("04_Auswertungen_gen_zu Zyklus mit Level.R")
 #-----------------------------------------------------------------------------------
-# Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren Lade_Entlade_Sum_bilden.R
-source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R")
+# Ladung und Entladung in jedem Zyklus addieren 04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R
+source("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus.R")
 #------------------------------------------------------------------------------------
 ```
-# Graphische Auswertungen
-## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz
+
+### Zusammenfassung dieses Vorgangs ###
+
+Dazu wird folgende Funktion definiert
+
+```{r}
+zyklen_bilden <- function(xdata, x) {
+  cat("zyklen bilden zu Level", x, "\n")
+  level <-x
+  xdata = zyklus_daten_gen(xdata, level)
+  xdata = zyklus_summen_gen(xdata)
+  #source("04_Auswertungen_gen_zu Zyklus mit Level.R", local=TRUE)
+  #source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R", local=TRUE)
+  source("04_Auswertungen_Proj_1_wert_pro_levelpd.R", local=TRUE)
+  red_data = zyklus_summen_gen(xdata)
+  return(red_data)
+}
+
+```
+
+Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus.
+
+
+# Graphische Auswertungen #
+## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz ##
 
 Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speicher in einer Halbperiode dividiert durch die Dauer der Halbperiode wird als (Energie-)Durchsatz bezeichnet angegeben in Wh/h.
 'lev' bezeichnet dem gewählten level dividiert durch 1000.
 
 
-```{r warning=FALSE}
-#-------------------------------------------------------- Proj_Ergeb_Level.R
-source("05_Grafik_Vs_Durchsatz.R", print.eval=TRUE) 
+```{r fig.height=5, fig.width=5, message=FALSE, warning=FALSE, paged.print=FALSE}
+#-------------------------------------------------------- 
+# Auswertung der Halbperioden
+
+#cat ("Auswerten der Zyklen", level," \n")
+
+proj_level <- zyklen_bilden(5000)
+
+proj_level <- proj_level %>% 
+  filter(eta > 0 & eta <= 10000) %>% 
+  filter(day >= "2017-11-01") 
+
+proj_level %>% 
+   ggplot(aes(x = durchsatz/1000, y = eta)) + 
+   geom_point(aes(x = durchsatz/1000, y = eta, color=lev)) +
+   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),se =FALSE) +
+   #geom_line(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum )) +
+   labs(
+      x = "Durchsatz in kWh/h",
+      y = "Wirkungsgrad * 1000",
+      color = "level" )+
+   facet_wrap(~ signum)
+
+
+
 ```
 
 
 Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung 
 
 ```{r}
-some_levels <- c(2000, 3000, 4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
+#some_levels <- c(2000, 3000, 4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
+some_levels <- c(4000, 5000,6000, 7000)
 proj_level <- tibble()
-for ( i in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro PEriode
-    level <- i  
-    source("04_Auswertungen_gen_Per_zu_horiz_Niv.R")
-    #-----------------------------------------------------------------------------------
-    # Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
-    source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R")
-    #------------------------------------------------------------------------------------
-    # Einen Datensatz reduzieren auf je einen Satz pro levelpd
-    source("04_Auswertungen_Proj_1_wert_pro_levelpd.R")
-    #-------------------------------------------------------------------------------------
-    # Die Auswertungen zu einem Datensatz verbinden
-    proj_level <- rbind(proj_level, proj_level_new)
+for ( level in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
+  proj_level <- rbind(proj_level, zyklen_bilden(level))
 }
 proj_level %>% 
    filter(eta  != 0) %>% 
    filter(eta <= 10000) %>% 
    ggplot(aes(x = durchsatz/1000, y = eta)) + 
    geom_point(aes(x = durchsatz/1000, y = eta, color=lev)) +
-   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum )) +
+   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),se =FALSE) +
    labs(
       x = "Durchsatz in kWh/h",
-      y = "Wirkungsgrad * 1000",
+      y = "Wirkungsgrad * 10000",
       color = "level"
-   )                                         #+
+   )  +                                       #+
    #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) #+
-   #facet_wrap(~ level)
+   facet_wrap(~ lev, nrow = 4)
 ```
 
 
 
-
-
-
-## Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode
+## Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode ##
 
 ```{r message=TRUE, warning=TRUE}
 # --------------------------------------------------------------- Proj_Level_Eta_vs_mit_level.R
@@ -150,7 +192,7 @@ source("05_Grafik_Eta_vs_Mitte.R", print.eval=TRUE)
 ```
 
 
-### Das Gleiche mit Aufsammeln von Daten zu mehreren Levels
+### Das Gleiche mit Aufsammeln von Daten zu mehreren Levels ###
 
 Wirkungsgrade eta=0 oder eta > 10000 werden ausgeblendet.
 
@@ -158,16 +200,7 @@ Wirkungsgrade eta=0 oder eta > 10000 werden ausgeblendet.
 some_levels <- c(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
 proj_level <- tibble()
 for (level in some_levels) {
-   # Perioden zwischen horizontalen Niveaus bilden 
-   source("04_Auswertungen_gen_Per_zu_horiz_Niv.R")
-   #-----------------------------------------------------------------------------------
-   # Ladung und Entladung nach täglichen MinMaxperioden bzw Level-Halbperioden summieren 
-   source("04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R")
-   #------------------------------------------------------------------------------------
-   # Einen Datensatz reduzieren auf je einen Satz pro levelpd
-   source("04_Auswertungen_Proj_1_wert_pro_levelpd.R")
-   #-------------------------------------------------------------------------------------
-   proj_level <- rbind(proj_level, proj_level_new)
+   proj_level <- rbind(proj_level, zyklen_bilden(level))
 }
 proj_level %>% 
    filter(eta  != 0 & eta <= 10000) %>% 

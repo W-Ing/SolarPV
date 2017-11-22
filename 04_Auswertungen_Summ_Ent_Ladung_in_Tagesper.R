@@ -1,3 +1,6 @@
+cat("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R \n")
+
+
 data <- data %>%
   ungroup(data) %>%
   group_by(daypd) %>%

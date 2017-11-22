@@ -24,5 +24,3 @@ rollmed      <- rollify(.f = ~median(.x,na_val= TRUE), window = glaettebreite  )
 # als Konvention am ENDE der 5min Phase gespeichert
 #  EHER NICHT NUTZEN
 in_out_pd_mitteln <- rollify(.f = ~sum(.x)/2, window = 2, na_value = NULL)
-
-# 

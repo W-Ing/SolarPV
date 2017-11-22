@@ -1,5 +1,7 @@
 # Auswertung der Halbperioden
 
+cat ("05_Grafik_Vs_Durchsatz ", level," \n")
+
 proj_level <- tibble()
 
 proj_level_new <- data %>%
@@ -12,7 +14,7 @@ proj_level <- rbind(proj_level, proj_level_new)
 
 proj_level <- proj_level %>% 
   filter(eta > 0 & eta <= 10000) %>% 
-  filter(day >= "2017-11-01") 
+  filter(day >= "2017-10-01") 
 
 proj_level %>% 
    ggplot(aes(x = durchsatz/1000, y = eta)) + 

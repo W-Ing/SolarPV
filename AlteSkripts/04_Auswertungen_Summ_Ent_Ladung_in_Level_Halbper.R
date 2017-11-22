@@ -3,13 +3,7 @@
 # # len_levelpd schon berechnet
 # #
 # 
-# data <- data %>%
-#   ungroup(data) %>% 
-#   group_by(daypd) %>%
-#   mutate(day_bat_in = sum(batt_ladung),      #Umrechnung W in 5 min auf Wh nicht mehr noetig
-#          day_bat_out= sum(batt_entladung),
-#          day_period_ladehub = sum(ladediff)
-#  )
+# 
 # Perioden zwischen Schnitten mit level-Wert auswerten
 
 data <- data %>% 
@@ -51,9 +45,6 @@ data <- data %>%
          lev       = level/1000
          ) %>%     
   ungroup()
-
-
-
 
 # Die in den Perioden kumulierte Batterieladung (In/Out) in Wh sowie der 
 # periodenweise zugeordnete Wirkungsgrad werden allen Zeilen zugeordnet
