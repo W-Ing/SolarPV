@@ -1,12 +1,15 @@
 # Auswertung der Halbperioden
 
-proj_level_new <- data %>%
-  ungroup() %>% 
-  group_by(levelpd) %>%
-  slice(1) %>%
-  ungroup()
+# proj_level_new <- data %>%
+#   ungroup() %>% 
+#   group_by(levelpd) %>%
+#   slice(1) %>%
+#   ungroup()
+# 
+# proj_level <- rbind(proj_level, proj_level_new)
 
-proj_level <- rbind(proj_level, proj_level_new)
+
+zyklen_bilden(data,level)
 
 proj_level %>% 
    filter(eta > 0 &eta <= 10000) %>% 

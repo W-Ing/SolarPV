@@ -136,7 +136,7 @@ Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speich
 
 #cat ("Auswerten der Zyklen", level," \n")
 
-proj_level <- zyklen_bilden(5000)
+proj_level <- zyklen_bilden(data, 5000)
 
 proj_level <- proj_level %>% 
   filter(eta > 0 & eta <= 10000) %>% 
@@ -165,7 +165,7 @@ Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung
 some_levels <- c(4000, 5000,6000, 7000)
 proj_level <- tibble()
 for ( level in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
-  proj_level <- rbind(proj_level, zyklen_bilden(level))
+  proj_level <- rbind(proj_level, zyklen_bilden(data, level))
 }
 proj_level %>% 
    filter(eta  != 0) %>% 
@@ -200,7 +200,7 @@ Wirkungsgrade eta=0 oder eta > 10000 werden ausgeblendet.
 some_levels <- c(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
 proj_level <- tibble()
 for (level in some_levels) {
-   proj_level <- rbind(proj_level, zyklen_bilden(level))
+   proj_level <- rbind(proj_level, zyklen_bilden(data,level))
 }
 proj_level %>% 
    filter(eta  != 0 & eta <= 10000) %>% 
