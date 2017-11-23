@@ -80,39 +80,33 @@ source("03-Spalten-bearbeiten.R")
 Ein _neutraler Zyklus_ ist eine Lade-Entlade-Vorgang der von einem Ladezustand des Akkus ausgehend zu diesem zurückkehrt.
 Für diese ist es sinnvoll, Wirkungsgrade als Verhältnis von Output zu Input zu bilden.
 
-"level"" legt die Höhe des Ausgangszustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
+"level" legt die Höhe des Ausgangszustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
 Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (später mit UP bzw. DOWN gekennzeichnet). 
-
-Vorerst
-```{r}
-level <- 7123   # ..%-Level
-```
 
 ### Bildung der Grundfunktionen
 
-Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe von data und l zur Übergabe des Levels
-Erzeugt Spalten
+1. Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe der Daten und l zur Übergabe des Levels
+        
+        Erzeugt die Spalten, die einen Zyklus mit einem Zähler charakteriseren und dessen Länge zählen:
+        zyklus --- len_of_zyklus
 
-levelpd und 
-len_of_levelpd
+2. Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data 
 
-Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data 
-
-Erzeugt 
-max_level = max(ladezustand),
-min_level = min(ladezustand),
-hub_level = max_level - min_level,
-mit_level = (min_level+max_level)/2,
-durchsatz = hub_level/len_levelpd*12,                             # Durchsatz = Wh zwischen Min und Max / Stunde
-signum    = as.character(ifelse(max_level > level, "UP","DOWN")),
-lev   
+        Erzeugt die innerhalb eines Zyklus konstanten Werte: 
+        max_level = max(ladezustand),
+        min_level = min(ladezustand),
+        hub_level = max_level - min_level,
+        mit_level = (min_level+max_level)/2,
+        durchsatz = hub_level/len_zyklus*12,                             # Durchsatz = Wh zwischen Min und Max / Stunde
+        signum    = as.character(ifelse(max_level > level, "UP","DOWN")),
+        lev   
 
 ```{r include=FALSE}
-# NEU_ Perioden zwischen horizontalen Niveaus identifizieren
-source("04_Auswertungen_gen_zu Zyklus mit Level.R",local=TRUE)
+# NEU_ Perioden zwischen horizontalen Niveaus identifizieren ALT :04_Auswertungen_gen_zu Zyklus mit Level.R
+source("04_Zyklus_Daten_gen.R",local=TRUE)
 #-----------------------------------------------------------------------------------
 # Ladung und Entladung in jedem Zyklus addieren 04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R
-source("04_Auswertungen_Summ_Ent_Ladung_in_Zyklus.R")
+source("04_Zyklus_Summen_gen.R")
 #------------------------------------------------------------------------------------
 source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbose = getOption("verbose"))
 
@@ -124,11 +118,11 @@ source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbos
 Dazu wird folgende Funktion definiert
 
 ```{r}
-zyklen_bilden <- function(xdata, x) {
-  cat("zyklen bilden zu Level", x, "\n")
-  level <-x
+zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Levels
+  # cat("zyklen bilden zu Level", x, "\n")
+  # level <-x
   xdata = zyklus_daten_gen(xdata, x)
-  xdata = zyklus_summen_gen(xdata)
+  xdata = zyklus_summen_gen(xdata,x)
   red_data = zyklus_reduzieren(xdata)
   return(red_data)
 }
@@ -145,27 +139,24 @@ Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speich
 'lev' bezeichnet dem gewählten level dividiert durch 1000.
 
 
-```{r fig.height=5, fig.width=5, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 #-------------------------------------------------------- 
 # Auswertung der Halbperioden
-
-temp = zyklus_daten_gen(data, 7000)
-temp = zyklus_summen_gen(temp, 7000)
 
 proj_level = zyklen_bilden(data, 7000)
 
 proj_level <- proj_level %>% 
   filter(eta > 0 & eta <= 10000) %>% 
-  filter(day >= "2017-11-01") 
+  filter(day >= "2017-10-01") 
 
 proj_level %>% 
    ggplot(aes(x = durchsatz/1000, y = eta)) + 
    geom_point(aes(x = durchsatz/1000, y = eta, color=lev)) +
-   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),se =FALSE) +
+   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),method=lm, se =FALSE) +
    #geom_line(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum )) +
    labs(
       x = "Durchsatz in kWh/h",
-      y = "Wirkungsgrad * 1000",
+      y = "Wirkungsgrad * 10000",
       color = "level" )+
    facet_wrap(~ signum)
 
@@ -178,7 +169,7 @@ Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung
 
 ```{r paged.print=FALSE}
 #some_levels <- c(2000, 3000, 4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
-some_levels <- c(5000, 7000)
+some_levels <- c(5000, 6000, 7000)
 proj_level <- tibble()
 for ( level in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
   proj_level <- rbind(proj_level, zyklen_bilden(data, level))
@@ -188,21 +179,21 @@ proj_level %>%
    filter(eta <= 10000) %>% 
    ggplot(aes(x = durchsatz/1000, y = eta)) + 
    geom_point(aes(x = durchsatz/1000, y = eta, color=lev)) +
-   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),se =FALSE) +
+   geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),method=lm, se =FALSE) +
    labs(
       x = "Durchsatz in kWh/h",
       y = "Wirkungsgrad * 10000",
       color = "level"
    )  +                                       #+
    #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) #+
-   facet_wrap(~ lev, nrow = 4)
+   facet_wrap(~ lev)
 ```
 
 
 
 ## Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode ##
 
-```{r message=TRUE, warning=TRUE}
+```{r message=FALSE, paged.print=FALSE}
 # --------------------------------------------------------------- Proj_Level_Eta_vs_mit_level.R
 source("05_Grafik_Eta_vs_Mitte.R", print.eval=TRUE) 
 ```
@@ -222,7 +213,7 @@ proj_level %>%
    filter(eta  != 0 & eta <= 10000) %>% 
    ggplot(aes(x = mit_level, y = eta)) + 
    geom_point(aes(x = mit_level, y = eta, color=lev)) +
-   geom_smooth(mapping = aes(x = mit_level, y = eta, linetype = signum )) #+
+   geom_smooth(mapping = aes(x = mit_level, y = eta, linetype = signum ), method=lm) #+
    #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) +
    #facet_wrap(~ signum)
  
