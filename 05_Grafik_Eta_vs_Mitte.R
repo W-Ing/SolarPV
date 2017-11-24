@@ -1,5 +1,8 @@
 # Auswertung der Halbperioden
 
+
+cat("level ",level,"\n")
+
 zyklen_bilden(data,level)
 
 proj_level %>% 

@@ -93,14 +93,13 @@ Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (spä
 2. Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data 
 
         Erzeugt die innerhalb eines Zyklus konstanten Werte: 
-        max_level = max(ladezustand),
-        min_level = min(ladezustand),
-        hub_level = max_level - min_level,
-        mit_level = (min_level+max_level)/2,
-        durchsatz = hub_level/len_zyklus*12,                             # Durchsatz = Wh zwischen Min und Max / Stunde
-        signum    = as.character(ifelse(max_level > level, "UP","DOWN")),
-        lev   
-
+        max_level : max(ladezustand),
+        min_level : min(ladezustand),
+        hub_level : max_level - min_level,
+        mit_level : (min_level+max_level)/2,
+        durchsatz : hub_level/len_zyklus*12, Einheit  Wh zwischen Min und Max / Stunde
+        signum    : Wenn max_level über dem vorgegebenen Level  "UP" sonst "DOWN"
+        lev       : Der gewählte Level gespeichert in % im Hinblick auf die Verkettung der Daten zu mehreren Levels 
 ```{r include=FALSE}
 # NEU_ Perioden zwischen horizontalen Niveaus identifizieren ALT :04_Auswertungen_gen_zu Zyklus mit Level.R
 source("04_Zyklus_Daten_gen.R",local=TRUE)
@@ -109,7 +108,6 @@ source("04_Zyklus_Daten_gen.R",local=TRUE)
 source("04_Zyklus_Summen_gen.R")
 #------------------------------------------------------------------------------------
 source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbose = getOption("verbose"))
-
 ```
 
 
@@ -119,8 +117,6 @@ Dazu wird folgende Funktion definiert
 
 ```{r}
 zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Levels
-  # cat("zyklen bilden zu Level", x, "\n")
-  # level <-x
   xdata = zyklus_daten_gen(xdata, x)
   xdata = zyklus_summen_gen(xdata,x)
   red_data = zyklus_reduzieren(xdata)
@@ -132,6 +128,24 @@ zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Leve
 Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus.
 
 
+## Strecken monotoner Entladung
+```{r}
+source("04_Auswertungen_Monotone_Entladung_finden.R")
+
+```
+
+
+```{r}
+temp <- monoton_fall(data)
+```
+
+
+```{r}
+
+```
+
+
+
 # Graphische Auswertungen #
 ## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz ##
 
@@ -141,23 +155,22 @@ Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speich
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 #-------------------------------------------------------- 
-# Auswertung der Halbperioden
+# Auswertung der Zyklen
 
 proj_level = zyklen_bilden(data, 7000)
 
 proj_level <- proj_level %>% 
   filter(eta > 0 & eta <= 10000) %>% 
-  filter(day >= "2017-10-01") 
+  filter(day >= "2017-11-01") 
 
 proj_level %>% 
    ggplot(aes(x = durchsatz/1000, y = eta)) + 
    geom_point(aes(x = durchsatz/1000, y = eta, color=lev)) +
    geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),method=lm, se =FALSE) +
-   #geom_line(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum )) +
    labs(
       x = "Durchsatz in kWh/h",
       y = "Wirkungsgrad * 10000",
-      color = "level" )+
+      color = "Level in %" )+
    facet_wrap(~ signum)
 
 
@@ -168,22 +181,21 @@ proj_level %>%
 Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung 
 
 ```{r paged.print=FALSE}
-#some_levels <- c(2000, 3000, 4000, 4500, 5000, 5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
-some_levels <- c(5000, 6000, 7000)
+some_levels <- c(3000, 4000, 5000, 6000, 7000, 8000)
 proj_level <- tibble()
-for ( level in some_levels) {  # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
-  proj_level <- rbind(proj_level, zyklen_bilden(data, level))
+for ( level in some_levels) {          # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
+  proj_level <- rbind(proj_level, zyklen_bilden(data, level)) # ueber mehrere Level aufsammeln
 }
 proj_level %>% 
-   filter(eta  != 0) %>% 
-   filter(eta <= 10000) %>% 
+   filter(eta <= 10000 & eta  != 0) %>% 
+   filter(day >= "2017-10-01") %>% 
    ggplot(aes(x = durchsatz/1000, y = eta)) + 
    geom_point(aes(x = durchsatz/1000, y = eta, color=lev)) +
    geom_smooth(mapping = aes(x = durchsatz/1000, y = eta, linetype = signum ),method=lm, se =FALSE) +
    labs(
       x = "Durchsatz in kWh/h",
       y = "Wirkungsgrad * 10000",
-      color = "level"
+      color = "Level in %"
    )  +                                       #+
    #geom_line(mapping = aes(x = durchsatz, y = eta, linetype = signum )) #+
    facet_wrap(~ lev)

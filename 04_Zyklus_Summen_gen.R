@@ -44,7 +44,7 @@ xdata <- xdata %>%
          mit_level = (min_level+max_level)/2,
          durchsatz = hub_level/len_zyklus*12,                             # Durchsatz = Wh zwischen Min und Max / Stunde
          signum    = as.character(ifelse(max_level > l, "UP","DOWN")),
-         lev       = l/1000
+         lev       = l/100 
          ) %>%     
   ungroup()
 
