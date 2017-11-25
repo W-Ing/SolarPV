@@ -128,19 +128,30 @@ zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Leve
 Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus.
 
 
-## Strecken monotoner Entladung
+## Strecken monotoner Entladung ##
+
 ```{r}
 source("04_Auswertungen_Monotone_Entladung_finden.R")
+```
 
+
+```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+temp <- monotonie_ladezustand(data)
 ```
 
 
 ```{r}
-temp <- monoton_fall(data)
-```
+temp[is.na(temp)] <- 0
+cnull <- nullen_zaehlen_kurz(temp)
+while(cnull > 100){
+     temp <- temp %>%
+         mutate(prev = lag(mono),
+                change_to_zero = (prev != 0) & (mono == 0), 
+                mono = ifelse(change_to_zero, prev, mono))
+     temp[is.na(temp)] <- 0
+     cnull <- nullen_zaehlen_kurz(temp)}
 
 
-```{r}
 
 ```
 
