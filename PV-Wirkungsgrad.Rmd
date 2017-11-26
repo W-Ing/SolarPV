@@ -134,28 +134,56 @@ Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus.
 source("04_Auswertungen_Monotone_Entladung_finden.R")
 ```
 
-
 ```{r message=FALSE, warning=FALSE, paged.print=TRUE}
 temp <- monotonie_ladezustand(data)
+
+temp    <- temp %>% select(-one_of(c("is_min","is_max","day_bat_in","day_bat_out","day_period_ladehub","daypd","len_daypd")))
+
+temp <- temp %>%
+   ungroup() %>% 
+   mutate(  up  = ifelse(mono ==  1, 1, 0),
+           down = ifelse(mono == -1, 1, 0),
+            su  = ifelse(lag(up)   != up,   1, 0),
+            sd  = ifelse(lag(down) != down, 1, 0),
+            s   = su | sd) 
+  
+          
+temp[is.na(temp)]<- 0
+
+work <- temp %>% 
+      mutate( nr   = cumsum(s)) %>% 
+      select(-one_of(c("su", "sd", "s")))    %>% 
+      group_by(nr) %>% 
+           mutate(input    = sum(batt_ladung),
+                  output   = sum(batt_entladung),
+                  netto_output = output - input,
+                  entladung= max(ladezustand)-min(ladezustand),
+                  eins     = 1,
+                  dauer = sum(eins) /12  # Dauer in Stunden, vorher 1 entspricht 5 min
+                  ) %>% 
+      slice(1)
+
+work <- work %>% 
+  filter(up == 1 ) %>% 
+  filter(day >= "2017-10-01") 
+
+work %>% 
+   ggplot(aes(x = entladung, y = netto_output)) + 
+   geom_point(aes(x = entladung, y = netto_output, color=dauer)) +
+   geom_smooth(mapping = aes(x = entladung, y = netto_output ),method=lm, se =FALSE) #+
+   #labs(
+    #  x = "Entladung",
+    #  y = "netto_output",
+    #  color = "ccc" )
+   #facet_wrap(~ signum)
+
+
+
+
+
+
+
 ```
-
-
-```{r}
-temp[is.na(temp)] <- 0
-cnull <- nullen_zaehlen_kurz(temp)
-while(cnull > 100){
-     temp <- temp %>%
-         mutate(prev = lag(mono),
-                change_to_zero = (prev != 0) & (mono == 0), 
-                mono = ifelse(change_to_zero, prev, mono))
-     temp[is.na(temp)] <- 0
-     cnull <- nullen_zaehlen_kurz(temp)}
-
-
-
-```
-
-
 
 # Graphische Auswertungen #
 ## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz ##

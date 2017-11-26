@@ -32,3 +32,7 @@ monotonie_ladezustand <- function(xdata){
 nullen_zaehlen_kurz <- function(xdata){
   return(sum(xdata$mono == 0,na.rm = TRUE))
 } 
+
+#-----------------------------------------------------------------
+
+
