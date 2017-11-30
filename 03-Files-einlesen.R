@@ -36,8 +36,8 @@ cat('gelesen:\n',files, '\n')
 
 data$ladezustand <- as.numeric(gsub(",",".",data$ladezustand))*100
 
-loesche <- c("leistung.stp")                # Duplikat entfernen  
-data    <- data %>% select(-one_of(loesche))
+#loesche <- c("leistung.stp")                # Duplikat entfernen  
+#data    <- data %>% select(-one_of(loesche))
 #-------------------------------------------------------------------
 data <- data %>% 
     arrange(zeit)     # Um die Zeilen korrekt anzuordnen

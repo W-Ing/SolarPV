@@ -12,7 +12,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
@@ -67,13 +67,45 @@ source("03-Spalten-bearbeiten.R")
 
 ### Monatssummen ###
 
-
-
 ```{r paged.print=TRUE}
 source("04_Monatliche_Batterie_Ladung.R", print.eval=TRUE)  
 ```
 
+```{r paged.print=TRUE}
+source("04_Woechentliche_Batterie_Ladung.R", print.eval=TRUE)  
+#ggsave("Wochen_Wirkungsg.pdf")
+```
 
+
+### Eigenverbrauch - auch fürs Finanzamt
+
+
+```{r}
+zusfg <- verbrauch %>% 
+         #filter(month == 11) %>% 
+         group_by(week) %>% 
+         summarise(batt_ladung     = sum(batt_ladung)/1000,
+                   batt_entladung  = sum(batt_entladung)/1000,
+                   leistung.pv     = sum(leistung.pv)/1000,
+                   netzeinspeisung = sum(netzeinspeisung)/1000,
+                   netzbezug       = sum(netzbezug)/1000) %>% 
+         mutate(   direktverbrauch = leistung.pv - netzeinspeisung - batt_ladung,       
+                   eigenverbrauch  = batt_entladung + direktverbrauch
+                   )
+
+zusfg.long <- melt(zusfg , id = "week", measure = c("direktverbrauch", "netzeinspeisung", "batt_ladung"))
+ggplot(zusfg.long, aes(week, value, fill = variable)) +
+   geom_bar(stat = "identity", position = "stack") +
+   labs(     x  = "Kalenderwoche",
+             y  = "Von PV-Anlage in der Woche erzeugt (kWh)",
+          fill  = " Art",
+          title = "Erzeugung woechentlich",
+          subtitle = "differenziert nach Verwendung") 
+  
+
+
+
+```
 
 
 

@@ -1,7 +1,32 @@
 #
-loesche <- c("leistung.pv","netzeinspeisung","netzbezug")
+# Batterie In/Out in Wh umrechen
+data <- data %>% 
+  mutate(batt_ladung    = batt_ladung/12,
+         batt_entladung = batt_entladung/12,
+         leistung.pv    = leistung.pv/12,
+         leistung.stp   = leistung.stp/12,
+         netzeinspeisung= netzeinspeisung/12,
+         netzbezug      = netzbezug/12    )  # Jetzt sind die Daten in Wh umgerechnet, die jeweils in 5 min erbracht werden
+# abgeleitete Groessen bilden
+
+data <- data %>%                            
+  mutate(
+    month    = (format(zeit,"%m")),   # Evtl Wiede as.numeric
+    week     = week(zeit),
+    day      = as_date(zeit),
+    hour     = as.numeric(format(zeit,"%H")),
+    ladediff = ladezustand- lag(ladezustand)) # diff geht nicht wg laenge
+data[is.na(data)] <- 0
+
+cat('Erzeuge Tabelle Verbrauch \n')
+verbrauch <- data
+verbrauch <- verbrauch %>% 
+     select(-leistung.stp)
+         
+
+loesche <- c("leistung.pv","leistung.stp","netzeinspeisung","netzbezug")
 data    <- data %>% select(-one_of(loesche))
-cat('Loesche Spalten ', loesche, '.\n')
+cat('Loesche Spalten aus data', loesche, '.\n')
 
 # Indexspalteanfuegen ------------------------------------------------
 data <- data %>%                             
@@ -17,17 +42,3 @@ cat('Der Datensatz enthaelt jetzt ',max(data$ct), 'Zeilen.\n')
           mutate(ladezustand = rollmed(lead(ladezustand,schieben)))
  data[is.na(data)] <- 0
 # ----------------------------------------------------------------------------- 
-# abgeleitete Groessen bilden
-data <- data %>%                            
-  mutate(
-         month    = (format(zeit,"%m")),   # Evtl Wiede as.numeric
-         week     = week(zeit),
-         day      = as_date(zeit),
-         hour     = as.numeric(format(zeit,"%H")),
-         ladediff = ladezustand- lag(ladezustand)) # diff geht nicht wg laenge
-data[is.na(data)] <- 0
-
-# Batterie In/Out in Wh umrechen
-data <- data %>% 
-  mutate(batt_ladung    = batt_ladung/12,
-         batt_entladung = batt_entladung/12)  # Jetzt sind die Daten in Wh umgerechnet, die jeweils in 5 min erbracht werden
