@@ -18,8 +18,11 @@ cat('Der Datensatz enthaelt jetzt ',max(data$ct), 'Zeilen.\n')
  data[is.na(data)] <- 0
 # ----------------------------------------------------------------------------- 
 # abgeleitete Groessen bilden
-data <- data %>%
-  mutate(day      = as_date(zeit),
+data <- data %>%                            
+  mutate(
+         month    = (format(zeit,"%m")),   # Evtl Wiede as.numeric
+         week     = week(zeit),
+         day      = as_date(zeit),
          hour     = as.numeric(format(zeit,"%H")),
          ladediff = ladezustand- lag(ladezustand)) # diff geht nicht wg laenge
 data[is.na(data)] <- 0

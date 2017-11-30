@@ -12,7 +12,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
@@ -52,7 +52,7 @@ source("03-Files-einlesen.R")
 
 a)  Die neue Spalte 'ct' zaehlt die Datenzeilen 
 b)  Über 'ladezustand' laeuft eine Glaettungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
-c) 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
+c) 'month', 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
 d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand und dem vorangegangenen berechnet (Einheit Wh).
 e) 'batt_ladung' und 'bat_entladung' werden von W in Wh umgerechnet (W in der Zeit 5 min, deswegen Division durch 12). Anm.: In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung P führt zu einer el. Arbeit von $P\cdot 5 \mbox{min}$ im Zeitintervall $t \pm 2,5 \mbox{min}$
 
@@ -62,6 +62,20 @@ source("03-Spalten-bearbeiten.R")
 ```
 
 #  Auswertungen # 
+
+## Einfache Summenbildungen ##
+
+### Monatssummen ###
+
+
+
+```{r paged.print=TRUE}
+source("04_Monatliche_Batterie_Ladung.R", print.eval=TRUE)  
+```
+
+
+
+
 
 ## Tägliche Minima und Maxima identifizieren  - optional ##
 
@@ -135,53 +149,114 @@ source("04_Auswertungen_Monotone_Entladung_finden.R")
 ```
 
 ```{r message=FALSE, warning=FALSE, paged.print=TRUE}
-temp <- monotonie_ladezustand(data)
 
+temp <- monotonie_mark(data)
+temp[is.na(temp)] <- 0
+
+temp <- temp %>% 
+    mutate( r_mono  = mono,
+            l_mono  = mono)
+
+sp_vec <- temp %>% 
+    filter(mono != 0) %>% 
+    mutate(pos = mono*ct)      # pos enthält an Platz p den Wert +/- p wenn ein Anstieg/Abfall vorliegt
+    
+sp_vec   = sp_vec$pos           # Vektor der Sprünge
+l_sp_vec = length(sp_vec)-1     # dessen Laenge -1
+
+for (i in 1:l_sp_vec) {             # Auffüllen nach rechts  / links
+    a <- sp_vec[i]                  # Sprung bei Pos a
+    o <- sp_vec[i+1]                # nächster bei Betrag von o
+    up <- abs(o)-1                  # letzte zu ändernde Position
+    dn <- abs(a)+1                  # erste zu ändernde
+    sa <- sign(a)
+    so <- sign(o)
+    for (j in dn:up ) {temp$l_mono[j] <-  so}
+    for (j in dn:up ) {temp$r_mono[j] <-  sa}
+}    
+   
 temp    <- temp %>% select(-one_of(c("is_min","is_max","day_bat_in","day_bat_out","day_period_ladehub","daypd","len_daypd")))
 
 temp <- temp %>%
    ungroup() %>% 
-   mutate(  up  = ifelse(mono ==  1, 1, 0),
-           down = ifelse(mono == -1, 1, 0),
-            su  = ifelse(lag(up)   != up,   1, 0),
-            sd  = ifelse(lag(down) != down, 1, 0),
-            s   = su | sd) 
-  
-          
+   mutate(  rup   = ifelse(r_mono ==  1, 1, 0) , 
+            rdown = ifelse(r_mono == -1, 1, 0),
+            rsu   = ifelse(lag(rup)   != rup,   1, 0),
+            rsd   = ifelse(lag(rdown) != rdown, 1, 0),
+            rs    = rsu | rsd) %>% 
+   mutate(  lup   = ifelse(l_mono ==  1, 1, 0),
+            ldown = ifelse(l_mono == -1, 1, 0),
+            lsu   = ifelse(lag(lup)   != lup,   1, 0),
+            lsd   = ifelse(lag(ldown) != ldown, 1, 0),
+            ls    = lsu | lsd) %>% 
+   ungroup() 
+
 temp[is.na(temp)]<- 0
 
-work <- temp %>% 
-      mutate( nr   = cumsum(s)) %>% 
-      select(-one_of(c("su", "sd", "s")))    %>% 
-      group_by(nr) %>% 
-           mutate(input    = sum(batt_ladung),
-                  output   = sum(batt_entladung),
-                  netto_output = output - input,
-                  entladung= max(ladezustand)-min(ladezustand),
-                  eins     = 1,
-                  dauer = sum(eins) /12  # Dauer in Stunden, vorher 1 entspricht 5 min
-                  ) %>% 
-      slice(1)
+temp <- temp %>% 
+      mutate( lnr   = cumsum(ls),
+              rnr   = cumsum(rs),
+              eins = 1 ) %>% 
+      select(-one_of(c("lsu", "lsd", "ls","rsu", "rsd", "rs")))   %>% 
+      group_by(lnr) %>% 
+           mutate(l_input    = sum(batt_ladung),
+                  l_output   = sum(batt_entladung),
+                  l_netto_output = (l_output - l_input),
+                  l_signum = sign(l_output-l_input),
+                  l_entladung= max(ladezustand)-min(ladezustand),
+                  l_dauer = sum(eins) /12 ) %>%  # Dauer in Stunden, vorher 1 entspricht 5 min
+      ungroup() %>% 
+      group_by(rnr) %>% 
+           mutate(r_input    = sum(batt_ladung),
+                  r_output   = sum(batt_entladung),
+                  r_netto_output = (r_output - r_input),
+                  r_signum = sign(r_output-r_input),
+                  r_entladung= max(ladezustand)-min(ladezustand),
+                  r_dauer = sum(eins) /12 ) %>%  # Dauer in Stunden, vorher 1 entspricht 5 min
+      ungroup()      
+  
+# workleft <- temp %>% 
+#       group_by(lnr) %>% 
+#       slice(1) %>% 
+#       ungroup() 
+#         
+# workright <- temp %>% 
+#       group_by (rnr) %>% 
+#       slice(1) %>%       
+#       ungroup()
+# 
+# workleft %>% 
+#    filter(day >= "2017-10-01") %>% 
+#    filter(l_entladung < 10000 & l_entladung > 100) %>% 
+#    ggplot(aes(x = l_entladung, y = l_netto_output)) + 
+#    geom_point(aes(x = l_entladung, y = l_netto_output, color=l_dauer)) +
+#    geom_smooth(mapping = aes(x = l_entladung, y = l_netto_output ),method=lm, se =FALSE) +
+#    labs(
+#       x = "Ladung / Entladung",
+#       y = "netto_output",
+#       color = "Dauer" ) +
+#    facet_wrap(~ l_signum)
+```
 
-work <- work %>% 
-  filter(up == 1 ) %>% 
-  filter(day >= "2017-10-01") 
-
-work %>% 
-   ggplot(aes(x = entladung, y = netto_output)) + 
-   geom_point(aes(x = entladung, y = netto_output, color=dauer)) +
-   geom_smooth(mapping = aes(x = entladung, y = netto_output ),method=lm, se =FALSE) #+
-   #labs(
-    #  x = "Entladung",
-    #  y = "netto_output",
-    #  color = "ccc" )
-   #facet_wrap(~ signum)
-
-
-
-
-
-
+```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+temp %>% 
+   filter(day >= "2017-10-01") %>% 
+   filter(r_entladung < 9990 & r_entladung > 100) %>%
+   filter(l_entladung < 9990 & l_entladung > 100) %>%
+   ggplot() + 
+   #ggplot(aes(x = r_entladung, y = r_netto_output)) + 
+   geom_point(aes(x = l_entladung/1000, y = l_netto_output), color= "red") +
+   geom_point(aes(x = r_entladung/1000, y = r_netto_output), color= "green") +
+   #geom_point(aes(x = r_entladung/1000, y = r_netto_output, color= as.logical((1+r_signum)/2))) +
+   scale_y_continuous(breaks = seq(-10000, 10000, by = 1000)) +
+   scale_x_continuous(breaks = seq(0, 10, by = 1)) +
+   #geom_smooth(mapping = aes(x = l_entladung, y = l_netto_output )) + #,method=lm, se =FALSE) +
+   #geom_smooth(mapping = aes(x = r_entladung, y = r_netto_output ),method=lm, se =FALSE) +
+   labs(
+     x = "Betrag der Zustandsdifferenz in kWh",
+     y = "Entladung der Batt (+ Entladung, - Ladung ",
+     color = "Vorzeichen" ) +
+   facet_wrap(~ month)
 
 ```
 
