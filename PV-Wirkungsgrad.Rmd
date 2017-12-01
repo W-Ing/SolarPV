@@ -81,8 +81,8 @@ source("04_Woechentliche_Batterie_Ladung.R", print.eval=TRUE)
 
 
 ```{r}
+
 zusfg <- verbrauch %>% 
-         #filter(month == 11) %>% 
          group_by(week) %>% 
          summarise(batt_ladung     = sum(batt_ladung)/1000,
                    batt_entladung  = sum(batt_entladung)/1000,
