@@ -2,7 +2,7 @@
 data <- tibble()
 data0 <- tibble()
 path_to_data <- "./Daten/"
-files <- dir(path=path_to_data, pattern=glob2rx('^Daten_*_11_2017.csv|^Daten_*_10_2017.csv'))  # ^Daten_*_09_2017.csv| |'^Daten_*_11_2017.csv'
+files <- dir(path=path_to_data, pattern=glob2rx('^Daten_*_11_2017.csv|^Daten_*_10_2017.csv|^Daten_*_12_2017.csv'))  # ^Daten_*_09_2017.csv| |'^Daten_*_11_2017.csv'
 files
 for (file in files)
 {    file=paste(path_to_data,file,sep='',collapse='')

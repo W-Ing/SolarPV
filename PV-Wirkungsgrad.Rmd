@@ -1,10 +1,11 @@
 ---
 title: "PV - Wirkungsgrad"
 output:
-  html_notebook: default
   pdf_document: 
     toc: true
     number_sections: true
+    toc_depth: 3
+  html_notebook: default
   html_document: 
   df_print: paged
   word_document: default
@@ -93,18 +94,71 @@ zusfg <- verbrauch %>%
                    eigenverbrauch  = batt_entladung + direktverbrauch
                    )
 
-zusfg.long <- melt(zusfg , id = "week", measure = c("direktverbrauch", "netzeinspeisung", "batt_ladung"))
+zusfg.long <- melt(zusfg , id = "week", measure = c("netzbezug","batt_entladung", "direktverbrauch"))
 ggplot(zusfg.long, aes(week, value, fill = variable)) +
    geom_bar(stat = "identity", position = "stack") +
    labs(     x  = "Kalenderwoche",
              y  = "Von PV-Anlage in der Woche erzeugt (kWh)",
           fill  = " Art",
+          title = "Verbrauch woechentlich",
+          subtitle = "differenziert nach Verwendung") +
+   geom_text(aes(label=round(value,-0)), size= 3, data = zusfg.long, position = position_stack(vjust=0.5))
+
+zusfg.long <- melt(zusfg , id = "week", measure = c("direktverbrauch","batt_ladung","netzeinspeisung" ))
+ggplot(zusfg.long, aes(week, value, fill = variable)) +
+   geom_bar(stat = "identity", position = "stack") +
+   labs(     x  = "Kalenderwoche",
+             y  = "Energie (kWh)",
+          fill  = " Art",
           title = "Erzeugung woechentlich",
-          subtitle = "differenziert nach Verwendung") 
-  
+          subtitle = "differenziert nach Verwendung") +
+   geom_text(aes(label=round(value,-0)), size= 3, data = zusfg.long, position = position_stack(vjust=0.5))
+```
+```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+
+zusfg <- verbrauch %>% 
+         group_by(month) %>% 
+         summarise(batt_ladung     = sum(batt_ladung)/1000,
+                   batt_entladung  = sum(batt_entladung)/1000,
+                   leistung.pv     = sum(leistung.pv)/1000,
+                   netzeinspeisung = sum(netzeinspeisung)/1000,
+                   netzbezug       = sum(netzbezug)/1000) %>% 
+         mutate(   direktverbrauch = leistung.pv - netzeinspeisung - batt_ladung,       
+                   eigenverbrauch  = batt_entladung + direktverbrauch
+                   )
+
+zusfg.long <- melt(zusfg , id = "month", measure = c( "netzbezug", "batt_entladung", "direktverbrauch"))
+
+ggplot(zusfg.long, aes(month, value, fill = variable)) +
+   geom_bar(stat = "identity", position = "stack") +
+   labs(     x  = "Kalenderwoche",
+             y  = "Von PV-Anlage im Monat erzeugt (kWh)",
+          fill  = " Art",
+          title = "Verbrauch monatlich",
+          subtitle = "differenziert nach Verwendung") +
+   geom_text(aes(label=round(value,1)), data = zusfg.long, position = position_stack(vjust=0.5))
+
+zusfg.long <- melt(zusfg , id = "month", measure = c("direktverbrauch", "batt_ladung", "netzeinspeisung"))
+
+ggplot(zusfg.long, aes(month, value, fill = variable)) +
+   geom_bar(stat = "identity", position = "stack") +
+   labs(     x  = "Kalenderwoche",
+             y  = "Energie (kWh)",
+          fill  = " Art",
+          title = "Erzeugung monatlich",
+          subtitle = "differenziert nach Verwendung") +
+   geom_text(aes(label=round(value,1)), data = zusfg.long, position = position_stack(vjust=0.5))
+
+```
+
+### Batteriezustand ###
 
 
-
+```{r}
+  batt.zustand <- data %>% 
+    select(zeit, month, week, day,hour, ladezustand) 
+  ggplot(batt.zustand) +
+   geom_bar(mapping = aes(x = ladezustand, fill=month)) 
 ```
 
 
