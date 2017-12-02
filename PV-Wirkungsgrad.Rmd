@@ -158,7 +158,7 @@ ggplot(zusfg.long, aes(month, value, fill = variable)) +
   batt.zustand <- data %>% 
     select(zeit, month, week, day,hour, ladezustand) 
   ggplot(batt.zustand) +
-   geom_bar(mapping = aes(x = ladezustand, fill=month)) 
+   geom_bar(mapping = aes(x = ladezustand, fill=month )) 
 ```
 
 
