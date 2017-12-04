@@ -1,13 +1,19 @@
 library(tidyverse)
-library(tibbletime)
-library(lubridate)
-library(reshape2)
+# library(tibbletime)
+# library(lubridate)
+# library(reshape2)
 #require(stringr)
 
-data <- tibble( x =1:26, y = letters[])
+myfunc <- function(par){
+   result <- ifelse(par=="JA", 1, 0 )
+   return(result)
+}
+myfunc("N")
 
-option = c("x")
-
-data <- data %>% 
-   mutate(z = one_of(option))
-data
+# get first observation for each Species in iris data -- base R
+mini_iris <- iris[c(1, 51, 101), ]
+# gather Sepal.Length, Sepal.Width, Petal.Length, Petal.Width
+my_iris <- gather(mini_iris, key = flower_att, value = measurement,
+       Sepal.Length, Sepal.Width, Petal.Length, Petal.Width)
+# same result but less verbose
+gather(mini_iris, key = flower_att, value = measurement, -Species)
