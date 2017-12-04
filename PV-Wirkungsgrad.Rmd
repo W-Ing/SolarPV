@@ -91,8 +91,10 @@ xText    <- ifelse(Text == "Monat", "Monat", "Kalenderwoche")
 verb_key <-  c("netzbezug", "batt_entladung", "direktverbrauch")
 erz_key  <-  c("netzeinspeisung", "batt_ladung", "direktverbrauch")
 
+ifelse(v_oder_e == "Verbrauch", diff_key = verb_key, diff_key = erz_key)
 
-verb.data$month = as.numeric(verb.data$month)
+verb.data$month = as.numeric(verb.data$month)          # Besser bereits früh angleichen
+
 V_E_daten <- verb.data %>%
     group_by(!!qdauer) %>%
     summarise(batt_ladung     = sum(batt_ladung)/1000,
@@ -109,6 +111,11 @@ V_E_verbrauch.long <<- V_E_daten %>%
 V_E_erzeugung.long <<- V_E_daten %>% 
      gather(key = key, value = Wert,  erz_key) %>% 
      select(-leistung.pv)
+V_E.long <<- V_E_daten %>% 
+     gather(key = key, value = Wert,  diff_key ) %>% 
+     select(-leistung.pv)
+
+
 if (v_oder_e == "Verbrauch"){
 ggplot(V_E_verbrauch.long, aes_(qdauer, V_E_verbrauch.long$Wert, fill = V_E_verbrauch.long$key)) +      # fuer gather
    geom_bar(stat   = "identity", position = "stack") +
