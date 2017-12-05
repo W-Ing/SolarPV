@@ -1,15 +1,31 @@
 # Verbrauch_u_Erzeugung.R
 
 
-
-
-
-
-plotte_erzeugung_u_verbrauch <- function(df, period, typ,  titel){     # Datenfile, Typ = Erzeugung/Verbrauch
-  qperiod <- enquo(period)
+verb_u_erzeugung <- function(verb.data, dauer, v_oder_e,Ztraum){ # Datentibble - week/month - Verbrauch/Erzeugung - Monat/Woche
+  # ich komme nicht ohne week month aus um später korrekt die Spalte mit dem gleichen Namen zu referenzieren
+  if (Ztraum == "Monat"){
+    qdauer  <- enquo(dauer)
+    # test1    <<- enquo(month) liefert ~function(expr) 
+    # test2    <<- enquo("month")
+    mnumber <- 12
+    xText <- "Monat"
+  } else {
+    qdauer  <- enquo(dauer)
+    mnumber <- 52
+    xText <- "Kalenderwoche"
+  }
+  if(v_oder_e == "Verbrauch") { 
+    diff_key = c("netzbezug", "batt_entladung", "direktverbrauch")
+    yText = "Verbrauch (kWh)"
+  } else  {
+    diff_key = c("netzeinspeisung", "batt_ladung", "direktverbrauch")
+    yText = "Von PV-Anlage erzeugt (kWh)"
+  }
   
-  df <- df %>%
-    group_by(!!qperiod) %>%
+  verb.data$month = as.numeric(verb.data$month)          # Besser bereits früh angleichen nach Prüfung schon in data
+  
+  V_E_daten <- verb.data %>%
+    group_by(!!qdauer) %>%
     summarise(batt_ladung     = sum(batt_ladung)/1000,
               batt_entladung  = sum(batt_entladung)/1000,
               leistung.pv     = sum(leistung.pv)/1000,
@@ -17,26 +33,20 @@ plotte_erzeugung_u_verbrauch <- function(df, period, typ,  titel){     # Datenfi
               netzbezug       = sum(netzbezug)/1000) %>%
     mutate(   direktverbrauch = leistung.pv - netzeinspeisung - batt_ladung,
               eigenverbrauch  = batt_entladung + direktverbrauch)
-  return(df)
+  
+  V_E.long <<- V_E_daten %>% 
+    gather(key = key, value = Wert,  diff_key ) %>% 
+    select(-leistung.pv)
+  ggplot(V_E.long, aes_(qdauer, V_E.long$Wert, fill = V_E.long$key)) +      # fuer gather
+    geom_bar(stat   = "identity", position = "stack") +
+    labs(     x     = xText,
+              y     = yText,
+              fill  = " Art",
+              title = v_oder_e,
+              subtitle = "differenziert nach Verwendung") +
+    scale_x_continuous(breaks = seq(1, mnumber,  by = 1)) +
+    geom_text(aes(label=round(Wert,-0)), size= 3, data = V_E.long, position = position_stack(vjust=0.5))
 }
-  # if(typ == "Erzeugung"){
-  #   df.long <- gather(df , id = !!qperiod,val, direktverbrauch,batt_ladung,netzeinspeisung)
-  #   } else {
-  #   df.long <- gather(df , id = !!qperiod, measure = c("netzbezug","batt_entladung", "direktverbrauch"))
-  #   }
-  
-  # tempsort <- temp %>%          # Aufbereiten für das Diagramm
-  #   gather(type, IN_OUT, Laden, Entladen)
-  
-  
- # return(df.long)
-  # ggplot(df.long, aes(!!qperiod, value, fill = variable)) +     #
-  #   geom_bar(stat = "identity", position = "stack") +
-  #   labs(     x  = "Kalenderwoche",
-  #             y  = "Von PV-Anlage in der Woche erzeugt (kWh)",
-  #             fill  = " Art",
-  #             title = "Test",
-  #             subtitle = "differenziert nach Verwendung") +
-  #   geom_text(aes(label=round(value,-0)), size= 3, data = df.long, position = position_stack(vjust=0.5))
-#}
+
+
 
