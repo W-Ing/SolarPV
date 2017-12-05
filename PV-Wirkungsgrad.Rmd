@@ -83,17 +83,19 @@ erzeuge_ent_lade_diagramm(data,month,"monatlich", "Monat")
 
 ```{r}
 
-meine_funktion <- function(verb.data, dauer, v_oder_e,Text){
+verb_u_erzeugung <- function(verb.data, dauer, v_oder_e,Text){
 qdauer = enquo(dauer)
-mnumber  <<- ifelse(Text == "Monat", 12, 52)
+
+mnumber  <- ifelse(Text == "Monat", 12, 52)
 xText    <- ifelse(Text == "Monat", "Monat", "Kalenderwoche")
+yText    <- ifelse(v_oder_e == "Verbrauch", "Verbrauch (kWh)", "Von PV-Anlage erzeugt (kWh)")
 
-verb_key <-  c("netzbezug", "batt_entladung", "direktverbrauch")
-erz_key  <-  c("netzeinspeisung", "batt_ladung", "direktverbrauch")
+if(v_oder_e == "Verbrauch") 
+  { diff_key = c("netzbezug", "batt_entladung", "direktverbrauch")}
+else  
+{ diff_key = c("netzeinspeisung", "batt_ladung", "direktverbrauch")}
 
-ifelse(v_oder_e == "Verbrauch", diff_key = verb_key, diff_key = erz_key)
-
-verb.data$month = as.numeric(verb.data$month)          # Besser bereits früh angleichen
+verb.data$month = as.numeric(verb.data$month)          # Besser bereits früh angleichen nach Prüfung schon in data
 
 V_E_daten <- verb.data %>%
     group_by(!!qdauer) %>%
@@ -105,43 +107,53 @@ V_E_daten <- verb.data %>%
     mutate(   direktverbrauch = leistung.pv - netzeinspeisung - batt_ladung,
               eigenverbrauch  = batt_entladung + direktverbrauch)
 
-V_E_verbrauch.long <<- V_E_daten %>% 
-     gather(key = key, value = Wert,  verb_key ) %>% 
-     select(-leistung.pv)
-V_E_erzeugung.long <<- V_E_daten %>% 
-     gather(key = key, value = Wert,  erz_key) %>% 
-     select(-leistung.pv)
+# V_E_verbrauch.long <<- V_E_daten %>% 
+#      gather(key = key, value = Wert,  verb_key ) %>% 
+#      select(-leistung.pv)
+# V_E_erzeugung.long <<- V_E_daten %>% 
+#      gather(key = key, value = Wert,  erz_key) %>% 
+#      select(-leistung.pv)
+
 V_E.long <<- V_E_daten %>% 
      gather(key = key, value = Wert,  diff_key ) %>% 
      select(-leistung.pv)
-
-
-if (v_oder_e == "Verbrauch"){
-ggplot(V_E_verbrauch.long, aes_(qdauer, V_E_verbrauch.long$Wert, fill = V_E_verbrauch.long$key)) +      # fuer gather
+ggplot(V_E.long, aes_(qdauer, V_E.long$Wert, fill = V_E.long$key)) +      # fuer gather
    geom_bar(stat   = "identity", position = "stack") +
    labs(     x     = xText,
-             y     = "Verbrauch (kWh)",
+             y     = yText,
              fill  = " Art",
              title = v_oder_e,
              subtitle = "differenziert nach Verwendung") +
    scale_x_continuous(breaks = seq(1, mnumber,  by = 1)) +
-   geom_text(aes(label=round(Wert,-0)), size= 3, data = V_E_verbrauch.long, position = position_stack(vjust=0.5))
-} else
-{
-ggplot(V_E_erzeugung.long, aes_(qdauer, V_E_erzeugung.long$Wert, fill = V_E_erzeugung.long$key)) +      # fuer gather
-   geom_bar(stat   = "identity", position = "stack") +
-   labs(     x     = xText ,
-             y     = "Von PV-Anlage erzeugt (kWh)",
-             fill  = " Art",
-             title = v_oder_e,
-             subtitle = "differenziert nach Verwendung") +
-   geom_text(aes(label=round(Wert,-0)), size= 3, data = V_E_erzeugung.long, position = position_stack(vjust=0.5))
+   geom_text(aes(label=round(Wert,-0)), size= 3, data = V_E.long, position = position_stack(vjust=0.5))
+
+# if (v_oder_e == "Verbrauch"){
+# ggplot(V_E.long, aes_(qdauer, V_E.long$Wert, fill = V_E.long$key)) +      # fuer gather
+#    geom_bar(stat   = "identity", position = "stack") +
+#    labs(     x     = xText,
+#              y     = yText,
+#              fill  = " Art",
+#              title = v_oder_e,
+#              subtitle = "differenziert nach Verwendung") +
+#    scale_x_continuous(breaks = seq(1, mnumber,  by = 1)) +
+#    geom_text(aes(label=round(Wert,-0)), size= 3, data = V_E.long, position = position_stack(vjust=0.5))
+# } else
+# {
+# ggplot(V_E.long, aes_(qdauer, V_E.long$Wert, fill = V_E.long$key)) +      # fuer gather
+#    geom_bar(stat   = "identity", position = "stack") +
+#    labs(     x     = xText ,
+#              y     = yText,
+#              fill  = " Art",
+#              title = v_oder_e,
+#              subtitle = "differenziert nach Verwendung") +
+#    scale_x_continuous(breaks = seq(1, mnumber,  by = 1)) +
+#    geom_text(aes(label=round(Wert,-0)), size= 3, data = V_E.long, position = position_stack(vjust=0.5))
+# }
 }
-}
-meine_funktion(verbrauch, week, "Verbrauch", "Woche")
-meine_funktion(verbrauch, month,"Verbrauch", "Monat")
-meine_funktion(verbrauch, week, "Erzeugung", "Woche")
-meine_funktion(verbrauch, month, "Erzeugung", "Monat")
+verb_u_erzeugung(verbrauch, week, "Verbrauch", "Woche")
+verb_u_erzeugung(verbrauch, month,"Verbrauch", "Monat")
+verb_u_erzeugung(verbrauch, week, "Erzeugung", "Woche")
+verb_u_erzeugung(verbrauch, month, "Erzeugung", "Monat")
 
 ```
 
