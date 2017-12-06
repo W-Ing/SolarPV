@@ -30,7 +30,7 @@ data <- rbind(data, data0)
 }
 rm(data0)
 
-cat('gelesen:\n',files, '\n')
+#cat('gelesen:\n',files, '\n')
 
 # Umwandeln des mit Komma geschrieben Prozentwerts in eine numerische Variable und Umrechnung 100 % entsprechen 10000
 
@@ -41,6 +41,9 @@ data$ladezustand <- as.numeric(gsub(",",".",data$ladezustand))*100
 #-------------------------------------------------------------------
 data <- data %>% 
     arrange(zeit)     # Um die Zeilen korrekt anzuordnen
+
+
+#-------------------------------------------------------------------
 
 
 

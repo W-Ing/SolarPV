@@ -18,6 +18,9 @@ data <- data %>%
     ladediff = ladezustand- lag(ladezustand)) # diff geht nicht wg laenge
 data[is.na(data)] <- 0
 
+source("03_Quellen_pruefen.R")
+
+
 cat('Erzeuge Tabelle Verbrauch \n')
 verbrauch <- data
 verbrauch <- verbrauch %>% 

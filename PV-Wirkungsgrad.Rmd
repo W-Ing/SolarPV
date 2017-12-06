@@ -1,13 +1,13 @@
 ---
 title: "PV - Wirkungsgrad"
 output:
+  html_notebook: default
+  html_document: default
+  df_print: paged
   pdf_document:
     toc: true
     number_sections: true
     toc_depth: 3
-  html_document: default
-  df_print: paged
-  html_notebook: default
   word_document: default
 ---
 
@@ -82,16 +82,13 @@ erzeuge_ent_lade_diagramm(data,month,"monatlich", "Monat")
 ```{r}
 source("04_Verbrauch_u_Erzeugung.R")
 
-verb_u_erzeugung(verbrauch, week, "Verbrauch", "Woche")
-verb_u_erzeugung(verbrauch, month,"Verbrauch", "Monat")
-verb_u_erzeugung(verbrauch, week, "Erzeugung", "Woche")
-verb_u_erzeugung(verbrauch, month, "Erzeugung", "Monat")
+#verb_u_erzeugung(verbrauch, week, "Verbrauch", "Woche") # Alt week wird übergeben
+verb_u_erzeugung(verbrauch, "Verbrauch", "Woche")  # Neu VErsuch: generiere week in der Funktion
+verb_u_erzeugung(verbrauch, "Verbrauch", "Monat")
+verb_u_erzeugung(verbrauch, "Erzeugung", "Woche")
+verb_u_erzeugung(verbrauch, "Erzeugung", "Monat")
 
 ```
-
-
-
-
 
 
 ### Batteriezustand ###

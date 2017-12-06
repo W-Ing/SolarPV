@@ -1,19 +1,26 @@
 # Verbrauch_u_Erzeugung.R
-
-
-verb_u_erzeugung <- function(verb.data, dauer, v_oder_e,Ztraum){ # Datentibble - week/month - Verbrauch/Erzeugung - Monat/Woche
+# 
+# Parameter dauer     übergibt week oder month
+#           v_oder_e           "Verbrauch" oder "Erzeugung"
+#           Ztraum             "Woche" oder "Monat" 
+verb_u_erzeugung <- function(verb.data, v_oder_e,Ztraum){ # Datentibble - week/month - Verbrauch/Erzeugung - Monat/Woche
+#verb_u_erzeugung <- function(verb.data, dauer, v_oder_e,Ztraum){ # Datentibble - week/month - Verbrauch/Erzeugung - Monat/Woche
   # ich komme nicht ohne week month aus um später korrekt die Spalte mit dem gleichen Namen zu referenzieren
   if (Ztraum == "Monat"){
-    qdauer  <- enquo(dauer)
+    #qdauer  <- enquo(dauer)              # enquo, wenn auf die übergebene Var bezogen, quo, wenn innerhal auf Text
+    qdauer  <- quo(week) 
     # test1    <<- enquo(month) liefert ~function(expr) 
     # test2    <<- enquo("month")
     mnumber <- 12
     xText <- "Monat"
   } else {
-    qdauer  <- enquo(dauer)
+    #qdauer  <- enquo(dauer)
+    qdauer  <- quo(month)
     mnumber <- 52
     xText <- "Kalenderwoche"
   }
+  
+  
   if(v_oder_e == "Verbrauch") { 
     diff_key = c("netzbezug", "batt_entladung", "direktverbrauch")
     yText = "Verbrauch (kWh)"
@@ -35,10 +42,11 @@ verb_u_erzeugung <- function(verb.data, dauer, v_oder_e,Ztraum){ # Datentibble -
               eigenverbrauch  = batt_entladung + direktverbrauch)
   
   V_E.long <<- V_E_daten %>% 
-    gather(key = key, value = Wert,  diff_key ) %>% 
+    gather(key = key, value = Wert,  diff_key ) %>%   # Benennt key mit key und value mit Wert, verknuepft damit die in diff_key genannten Variablen
     select(-leistung.pv)
+  
   ggplot(V_E.long, aes_(qdauer, V_E.long$Wert, fill = V_E.long$key)) +      # fuer gather
-    geom_bar(stat   = "identity", position = "stack") +
+    geom_bar(stat   = "identity", position = "stack") +                     # identity: stellt die Werte dar, stack stapelt
     labs(     x     = xText,
               y     = yText,
               fill  = " Art",
