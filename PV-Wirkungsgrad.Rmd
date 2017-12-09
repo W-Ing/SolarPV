@@ -1,13 +1,13 @@
 ---
 title: "PV - Wirkungsgrad"
 output:
-  html_notebook: default
-  html_document: default
-  df_print: paged
   pdf_document:
     toc: true
     number_sections: true
     toc_depth: 3
+  html_document: default
+  df_print: paged
+  html_notebook: default
   word_document: default
 ---
 
@@ -79,22 +79,20 @@ erzeuge_ent_lade_diagramm(data,month,"monatlich", "Monat")
 
 
 ### Verbrauch und Erzeugung - Datenübersicht (Eigenverbrauch fürs Finanzamt)
+
 ```{r}
 source("04_Verbrauch_u_Erzeugung.R")
-
-#verb_u_erzeugung(verbrauch, week, "Verbrauch", "Woche") # Alt week wird übergeben
-verb_u_erzeugung(verbrauch, "Verbrauch", "Woche")  # Neu VErsuch: generiere week in der Funktion
+verb_u_erzeugung(verbrauch, "Verbrauch", "Woche")   
 verb_u_erzeugung(verbrauch, "Verbrauch", "Monat")
 verb_u_erzeugung(verbrauch, "Erzeugung", "Woche")
 verb_u_erzeugung(verbrauch, "Erzeugung", "Monat")
-
 ```
 
 
 ### Batteriezustand ###
 
 
-Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batterie in den Monaten aufgetreten sind. Asugezählt wird in  Intervallen der Breite 0,400 kWh. (Amn: Ränder prüfen!)
+Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batterie in den Monaten aufgetreten sind. Ausgezählt wird in  Intervallen der Breite 0,400 kWh. (Amn: Ränder prüfen!)
 
 
 ```{r}
@@ -102,7 +100,27 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
     select(zeit, month, week, day,hour, ladezustand) 
   ggplot(batt.zustand) +
    #geom_bar(mapping = aes(x = ladezustand, fill=month ))   
-    stat_bin(mapping = aes(x = ladezustand, fill=month ), bins = 25)
+   stat_bin(mapping = aes(x = ladezustand, fill=month, order=month ), bins = 25) #+
+   #scale_fill_brewer(palette="red")
+```
+## Ladung und Entladung summieren und mit Ladezustand vergleichen
+
+```{r fig.width=16, warning=FALSE}
+eta_1 <- 0.91   # versuchesweise angenommen
+eta_2 <- 0.77
+lade_data <- data %>% 
+   select(zeit, month, week, day, hour, ct, batt_ladung, batt_entladung, ladezustand ) %>% 
+   mutate(temp_ladung = batt_ladung) 
+
+lade_data$temp_ladung[1]<- lade_data$temp_ladung[1]+5800
+
+lade_data <- lade_data %>%
+   mutate(cum_ladung = cumsum(eta_1*temp_ladung - batt_entladung/eta_2)
+          )
+ggplot(lade_data) +
+  geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
+  geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green")
+  
 ```
 
 

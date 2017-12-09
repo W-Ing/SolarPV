@@ -11,14 +11,14 @@ data <- data %>%
 
 data <- data %>%                            
   mutate(
-    month    = (format(zeit,"%m")),   # Evtl Wiede as.numeric
+    month    = (format(zeit,"%m")),   # gibt chr , besser Evtl Wieder as.numeric
     week     = week(zeit),
     day      = as_date(zeit),
-    hour     = as.numeric(format(zeit,"%H")),
+    hour     = as.numeric(format(zeit,"%H")), # gibt num
     ladediff = ladezustand- lag(ladezustand)) # diff geht nicht wg laenge
 data[is.na(data)] <- 0
 
-source("03_Quellen_pruefen.R")
+ source("03_Quellen_pruefen.R")
 
 
 cat('Erzeuge Tabelle Verbrauch \n')

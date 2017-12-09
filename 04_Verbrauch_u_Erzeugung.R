@@ -8,14 +8,14 @@ verb_u_erzeugung <- function(verb.data, v_oder_e,Ztraum){ # Datentibble - week/m
   # ich komme nicht ohne week month aus um später korrekt die Spalte mit dem gleichen Namen zu referenzieren
   if (Ztraum == "Monat"){
     #qdauer  <- enquo(dauer)              # enquo, wenn auf die übergebene Var bezogen, quo, wenn innerhal auf Text
-    qdauer  <- quo(week) 
+    qdauer  <- quo(month) 
     # test1    <<- enquo(month) liefert ~function(expr) 
     # test2    <<- enquo("month")
     mnumber <- 12
     xText <- "Monat"
   } else {
     #qdauer  <- enquo(dauer)
-    qdauer  <- quo(month)
+    qdauer  <- quo(week)
     mnumber <- 52
     xText <- "Kalenderwoche"
   }
