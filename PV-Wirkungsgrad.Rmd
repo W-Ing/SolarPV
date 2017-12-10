@@ -1,13 +1,13 @@
 ---
 title: "PV - Wirkungsgrad"
 output:
+  html_notebook: default
+  html_document: default
+  df_print: paged
   pdf_document:
     toc: true
     number_sections: true
     toc_depth: 3
-  html_document: default
-  df_print: paged
-  html_notebook: default
   word_document: default
 ---
 
@@ -110,17 +110,63 @@ eta_1 <- 0.91   # versuchesweise angenommen
 eta_2 <- 0.77
 lade_data <- data %>% 
    select(zeit, month, week, day, hour, ct, batt_ladung, batt_entladung, ladezustand ) %>% 
-   mutate(temp_ladung = batt_ladung) 
+   mutate(korr_ladung = batt_ladung) 
 
-lade_data$temp_ladung[1]<- lade_data$temp_ladung[1]+5800
+lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+5800  
 
-lade_data <- lade_data %>%
-   mutate(cum_ladung = cumsum(eta_1*temp_ladung - batt_entladung/eta_2)
-          )
-ggplot(lade_data) +
-  geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
-  geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green")
-  
+temp_data <- lade_data %>%
+     mutate(kombi_ent_ladung = eta_1*batt_ladung - batt_entladung/eta_2) %>% 
+     mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
+     mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
+     summarize(f = max(abweichung))
+val = temp_data$f[1]
+val
+# lade_data <- lade_data %>%
+#    mutate(cum_ladung = cumsum(eta_1*temp_ladung - batt_entladung/eta_2),
+#           abweichung = abs(cum_ladung - ladezustand),
+#           cum_fehler = max(abweichung)
+#           )
+
+# ggplot(lade_data) +
+#   geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
+#   geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green")
+
+# -------------------------------------------------------------------
+# Berechnet maximale Abweichung von Ladezustand und der mit eta1/eta2 gewichteten kumulativen Ladung
+# fehler_func <- function( df, e1, e2){
+#    df <- df %>% 
+#    mutate(cum_ladung = cumsum(e1*temp_ladung - batt_entladung/e2),
+#           abweichung = abs(cum_ladung - ladezustand)) %>%
+#    summarize(f = max(abweichung))
+#    return(df$f[1]) 
+# }
+fehler_func <- function(e1, e2){
+   temp_data <- lade_data %>%
+     mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>% 
+     mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
+     mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
+     summarize(f = max(abweichung))
+   
+   val = temp_data$f[1]
+   return(val)
+   }
+# --------------------------------------------------------------
+
+source("versuch.R") # Erzeuge MAtrix der Paare von eta1 und eta2
+
+Mat_EtaPaare <- Mat_EtaPaare %>% 
+     mutate(fehler = 0  )
+
+# Mat_EtaPaare <- Mat_EtaPaare %>% 
+#      mutate(Fehlerwert = fehler_func(Mat_EtaPaare$v1, Mat_EtaPaare$v2))
+
+laenge_eta_paare <- nrow(Mat_EtaPaare)
+
+for (i in 1:laenge_eta_paare){
+      Mat_EtaPaare$fehler[i] = fehler_func(Mat_EtaPaare$v1[i], Mat_EtaPaare$v2[i])     
+}
+class(Mat_EtaPaare)
+
 ```
 
 
@@ -129,12 +175,12 @@ ggplot(lade_data) +
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 # Minima und MAxima markieren frueher R_Min_Max_mark.R
- source("04_Auswertungen_Min_Max_tgl_Per.R")
+# source("04_Auswertungen_Min_Max_tgl_Per.R")
 #-----------------------------------------------------------------------------------
 ```
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 # Minima und MAxima markieren frueher R_Min_Max_mark.R
- source("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R")
+# source("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R")
 ```
 
 ## Perioden zwischen horizontalen Niveaus bilden - Neutrale Zyklen ##
