@@ -106,8 +106,8 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
 ## Ladung und Entladung summieren und mit Ladezustand vergleichen
 
 ```{r fig.width=16, warning=FALSE}
-eta_1 <- 0.91   # versuchesweise angenommen
-eta_2 <- 0.77
+eta_1 <- 0.94   # versuchesweise angenommen
+eta_2 <- 0.74
 lade_data <- data %>% 
    select(zeit, month, week, day, hour, ct, batt_ladung, batt_entladung, ladezustand ) %>% 
    mutate(korr_ladung = batt_ladung) 
@@ -121,15 +121,15 @@ temp_data <- lade_data %>%
      summarize(f = max(abweichung))
 val = temp_data$f[1]
 val
-# lade_data <- lade_data %>%
-#    mutate(cum_ladung = cumsum(eta_1*temp_ladung - batt_entladung/eta_2),
-#           abweichung = abs(cum_ladung - ladezustand),
-#           cum_fehler = max(abweichung)
-#           )
+lade_data <- lade_data %>%
+   mutate(cum_ladung = cumsum(eta_1*korr_ladung - batt_entladung/eta_2),
+          abweichung = abs(cum_ladung - ladezustand),
+          cum_fehler = max(abweichung)
+          )
 
-# ggplot(lade_data) +
-#   geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
-#   geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green")
+ggplot(lade_data) +
+  geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
+  geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green")
 
 # -------------------------------------------------------------------
 # Berechnet maximale Abweichung von Ladezustand und der mit eta1/eta2 gewichteten kumulativen Ladung
@@ -140,16 +140,16 @@ val
 #    summarize(f = max(abweichung))
 #    return(df$f[1]) 
 # }
-fehler_func <- function(e1, e2){
-   temp_data <- lade_data %>%
-     mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>% 
-     mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
-     mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
-     summarize(f = max(abweichung))
-   
-   val = temp_data$f[1]
-   return(val)
-   }
+# fehler_func <- function(e1, e2){
+#    temp_data <- lade_data %>%
+#      mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>% 
+#      mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
+#      mutate(abweichung = abs(cum_ladung - ladezustand)) %>%             
+#      summarize(f = max(abweichung))
+#    
+#    val = temp_data$f[1]
+#    return(val)
+#    }
 # --------------------------------------------------------------
 
 source("versuch.R") # Erzeuge MAtrix der Paare von eta1 und eta2
@@ -163,9 +163,26 @@ Mat_EtaPaare <- Mat_EtaPaare %>%
 laenge_eta_paare <- nrow(Mat_EtaPaare)
 
 for (i in 1:laenge_eta_paare){
-      Mat_EtaPaare$fehler[i] = fehler_func(Mat_EtaPaare$v1[i], Mat_EtaPaare$v2[i])     
+     e1 <- as.numeric(Mat_EtaPaare[i,1])     # Hier war der Hund begraben, jetzt muss ich wieder rueckbauen
+     e2 <- as.numeric(Mat_EtaPaare[i,2])
+     temp_data <- lade_data %>%
+        mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>% 
+        mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
+        mutate(abweichung = abs(cum_ladung - ladezustand)) %>%             
+        summarize(f = max(abweichung))
+     Mat_EtaPaare$fehler[i] = temp_data$f[1]    
 }
-class(Mat_EtaPaare)
+
+# x <- eta1   <- Mat_EtaPaare$v1
+# y <- eta2   <- Mat_EtaPaare$v2
+# z <- fehler <- Mat_EtaPaare$v1
+
+#min(Mat_EtaPaare$fehler)
+kurz <- Mat_EtaPaare %>% 
+     filter(fehler == min(Mat_EtaPaare$fehler))
+
+kurz
+
 
 ```
 
