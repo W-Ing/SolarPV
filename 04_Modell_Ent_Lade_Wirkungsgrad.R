@@ -28,15 +28,14 @@ list_fu <- function(start, num, delta){
 # -------------------------------------------------------------------
 # Cart. Produkt aus zwei Listen    # 
 prod<-c()
-for (i in list_fu(0.10, 90, 0.01)){
-   for (j in list_fu(0.10, 90, 0.01)){
+for (i in list_fu(0.90, 10,0.01)){
+   for (j in list_fu(0.70, 10, 0.01)){
       prod <- append(prod,c(i,j))
   }
 }
 
 # ----------------------------------------------------------------------
 # Verteilt paarweise auf Matrix und ergaenzt dritte Spalte
-
 
 M <- matrix(prod,nrow=2,ncol=length(prod)/2)
 

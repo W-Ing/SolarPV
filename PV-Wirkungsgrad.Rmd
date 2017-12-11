@@ -109,10 +109,13 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
 
 source("04_Modell_Ent_Lade_Wirkungsgrad.R") # 
 
-
 ggplot(lade_data) +
   geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
-  geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green")
+  geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green") +
+  labs(x = "Zeit", 
+       y = "Ladezustand (Vergleich in Wh bzw. 10000 für 100% )",
+       title = "Modellierter und tatsächlicher Ladezustand",
+       subtitle = "grün: tatsächlich, blau: modelliert")
 
 ```
 
