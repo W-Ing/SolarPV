@@ -24,9 +24,10 @@ Die Daten liegen in Dateien tageweise vor, beim Download werden diese von Hand b
 
 Die Datensätze enthalten die Größen
 
-leistung.pv  ---  leistung.stp  ---  netzeinspeisung ---  netzbezug  --- batt_ladung  ---  batt_entladung ---  ladezustand
+zeit --- leistung.pv  ---  leistung.stp  ---  netzeinspeisung ---  netzbezug  --- batt_ladung  ---  batt_entladung ---  ladezustand(%)
 
 Die beiden ersten Werte sind identisch, deswegen wird "leistung.stp"" in der Folge sofort gelöscht. 
+Der Ladezustand wird in % der Batteriekapazität angegeben. Laut Herstellerangabe beträgt diese 9,8 kWh, von denen 9,3 KWh verfügbsr sind.
 
 
 # Vorbereitungen #
@@ -49,18 +50,30 @@ Die Zeilen müssen sortiert werden, weil die Dateien nicht in der korrekten zeit
 source("03-Files-einlesen.R")
 ```
 
-### Einige Spalten werden erzeugt, gelöscht, bearbeitet und z.B. neu normiert:###
+### Ergänzende Spaltenoperationen und Datenkontrollen ###
 
 a)  Die neue Spalte 'ct' zaehlt die Datenzeilen 
 b)  Über 'ladezustand' laeuft eine Glaettungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
 c) 'month', 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
-d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand und dem vorangegangenen berechnet (Einheit Wh).
-e) 'batt_ladung' und 'bat_entladung' werden von W in Wh umgerechnet (W in der Zeit 5 min, deswegen Division durch 12). Anm.: In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung P führt zu einer el. Arbeit von $P\cdot 5 \mbox{min}$ im Zeitintervall $t \pm 2,5 \mbox{min}$
+d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand und dem vorangegangenen berechnet (NEIN: Prozent! Einheit Wh).
+e)  von W in Wh werden umgerechnet:
+    i)   batt_ladung, batt_entladung, 
+    ii)  leistung.pv, leistung.stp,
+    iii) netzeinspeisung, netzbezug
+   Weil die Leistung jeweils in 5min-Intervallen erhoben wird, wird in dieser Zeit die Arbeit W = P 5min = P (1/12) h verrichtet.
+    Anm.: In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung P führt zu einer el. Arbeit von $P\cdot 5 \mbox{min}$ im Zeitintervall $t \pm 2,5 \mbox{min}$
+
 
 ```{r}
 # Ergaenzende Spaltenoperationen ----------------------------------------------
 source("03-Spalten-bearbeiten.R")
 ```
+
+Die Rohdaten werden getrennt in "data" mit Variablen:
+zeit batt_ladung batt_entladung ladezustand month week day hour ladediff ct
+
+und "verbrauch" mit Variablen:
+zeit leistung.pv netzeinspeisung netzbezug batt_ladung batt_entladung ladezustand month week day hour ladediff
 
 #  Auswertungen # 
 
@@ -113,7 +126,7 @@ ggplot(lade_data) +
   geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
   geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green") +
   labs(x = "Zeit", 
-       y = "Ladezustand (Vergleich in Wh bzw. 10000 für 100% )",
+       y = "Ladezustand (Wh)",
        title = "Modellierter und tatsächlicher Ladezustand",
        subtitle = "grün: tatsächlich, blau: modelliert")
 

@@ -4,12 +4,17 @@
 n <- nrow(data)
 m <- nrow(distinct(data,zeit))
 
-cat("Kontrolle auf redudante Zeilen\n")
+cat("Kontrolle auf redundante Zeilen\n")
 
 if (n != m) {
      cat("Warnung, es gibt doppelte Zeiten.\n")
   } else {cat("Ok, es gibt keine doppelte Zeiten.\n\n")}
 
+temp <- data %>% 
+  filter(batt_ladung !=0 & batt_entladung !=0 ) 
+  
+cat("Info: In ", nrow(temp)," Zeilen der Originaldaten findet gleichzeitig Ladung und Entladung statt.\n\n")
+rm(temp)
 # -----------------------------------------------------------------------
 # Extrahiere Zeiten und Tage im Zeit/Date Format
 
@@ -26,7 +31,7 @@ mon_im_Jahr <- tage_im_Jahr %>%
 
 
 # ------------------------------------------------------------------
-# Ausgeben TAge in den vorkommenden MOnaten
+# Ausgeben Tage in den vorkommenden Monaten
 
 list_Monate <- pull(mon_im_Jahr, monJahr)
 
@@ -57,6 +62,8 @@ if (length(list_tage) >0 ){
 }
 
 # -------------------------------------------------------------------
+
+
 
 
 

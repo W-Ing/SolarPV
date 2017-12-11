@@ -2,6 +2,7 @@
 
 lade_data <- data %>% 
   select(zeit, month, week, day, hour, ct, batt_ladung, batt_entladung, ladezustand ) %>% 
+  mutate(ladezustand_wH = 0.98 * ladezustand) %>% 
   mutate(korr_ladung = batt_ladung) %>% 
   select(-batt_ladung)
 
@@ -12,7 +13,7 @@ fehler_func <- function(e1, e2){           # verwende globale Daten lade_data
   temp_data <- lade_data %>%
     mutate(kombi_ent_ladung = e1*korr_ladung - batt_entladung/e2) %>%
     mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
-    mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
+    mutate(abweichung = abs(cum_ladung - ladezustand_wH)) %>%
     #summarize(f = max(abweichung))
     summarize(f = sum(abweichung^2))      # Bem: Supremumsnorm liefert denselben Wert
   return(as.numeric(temp_data$f[1]))
@@ -28,8 +29,8 @@ list_fu <- function(start, num, delta){
 # -------------------------------------------------------------------
 # Cart. Produkt aus zwei Listen    # 
 prod<-c()
-for (i in list_fu(0.90, 10,0.01)){
-   for (j in list_fu(0.70, 10, 0.01)){
+for (i in list_fu(0.7, 30,0.01)){
+   for (j in list_fu(0.65, 35, 0.01)){
       prod <- append(prod,c(i,j))
   }
 }
