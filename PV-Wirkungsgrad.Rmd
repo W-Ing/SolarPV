@@ -114,13 +114,6 @@ lade_data <- data %>%
 
 lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+5800  
 
-temp_data <- lade_data %>%
-     mutate(kombi_ent_ladung = eta_1*batt_ladung - batt_entladung/eta_2) %>% 
-     mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
-     mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
-     summarize(f = max(abweichung))
-val = temp_data$f[1]
-val
 lade_data <- lade_data %>%
    mutate(cum_ladung = cumsum(eta_1*korr_ladung - batt_entladung/eta_2),
           abweichung = abs(cum_ladung - ladezustand),
@@ -140,22 +133,17 @@ ggplot(lade_data) +
 #    summarize(f = max(abweichung))
 #    return(df$f[1]) 
 # }
-# fehler_func <- function(e1, e2){
-#    temp_data <- lade_data %>%
-#      mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>% 
-#      mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
-#      mutate(abweichung = abs(cum_ladung - ladezustand)) %>%             
-#      summarize(f = max(abweichung))
-#    
-#    val = temp_data$f[1]
-#    return(val)
-#    }
+fehler_func <- function(e1, e2){           # verwende globale Daten lade_data
+   temp_data <- lade_data %>%
+     mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>%
+     mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
+     mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
+     summarize(f = max(abweichung))
+   return(as.numeric(temp_data$f[1]))
+   }
 # --------------------------------------------------------------
 
-source("versuch.R") # Erzeuge MAtrix der Paare von eta1 und eta2
-
-Mat_EtaPaare <- Mat_EtaPaare %>% 
-     mutate(fehler = 0  )
+source("versuch.R") # Erzeuge Matrix der Paare von eta1 und eta2
 
 # Mat_EtaPaare <- Mat_EtaPaare %>% 
 #      mutate(Fehlerwert = fehler_func(Mat_EtaPaare$v1, Mat_EtaPaare$v2))
@@ -165,17 +153,17 @@ laenge_eta_paare <- nrow(Mat_EtaPaare)
 for (i in 1:laenge_eta_paare){
      e1 <- as.numeric(Mat_EtaPaare[i,1])     # Hier war der Hund begraben, jetzt muss ich wieder rueckbauen
      e2 <- as.numeric(Mat_EtaPaare[i,2])
-     temp_data <- lade_data %>%
-        mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>% 
-        mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
-        mutate(abweichung = abs(cum_ladung - ladezustand)) %>%             
-        summarize(f = max(abweichung))
-     Mat_EtaPaare$fehler[i] = temp_data$f[1]    
+     # temp_data <- lade_data %>%
+     #    mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>% 
+     #    mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
+     #    mutate(abweichung = abs(cum_ladung - ladezustand)) %>%             
+     #    summarize(f = max(abweichung))
+     Mat_EtaPaare$fehler[i] = fehler_func(e1,e2)   
 }
 
 # x <- eta1   <- Mat_EtaPaare$v1
 # y <- eta2   <- Mat_EtaPaare$v2
-# z <- fehler <- Mat_EtaPaare$v1
+# z <- fehler <- Mat_EtaPaare$fehler
 
 #min(Mat_EtaPaare$fehler)
 kurz <- Mat_EtaPaare %>% 

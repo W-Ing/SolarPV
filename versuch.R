@@ -17,4 +17,5 @@ for (i in list_fu(0.85, 10, 0.01)){
 M <- matrix(prod,nrow=2,ncol=length(prod)/2)
 Mat_EtaPaare <- as.tibble(t(M))
 
-
+Mat_EtaPaare <- Mat_EtaPaare %>% 
+  mutate(fehler = 0  )
