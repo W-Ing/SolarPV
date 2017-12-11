@@ -109,9 +109,10 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
 
 lade_data <- data %>% 
    select(zeit, month, week, day, hour, ct, batt_ladung, batt_entladung, ladezustand ) %>% 
-   mutate(korr_ladung = batt_ladung) 
+   mutate(korr_ladung = batt_ladung) %>% 
+   select(-batt_ladung)
 
-lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+5800  
+lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+5800    # korrekt wäre, 5800/eta_1, letzteres ist aber noch unbekannt
 
 lade_data <- lade_data %>%
    mutate(cum_ladung = cumsum(eta_1*korr_ladung - batt_entladung/eta_2),
@@ -119,16 +120,16 @@ lade_data <- lade_data %>%
           cum_fehler = max(abweichung)
           )
 
-
-
 # -------------------------------------------------------------------
 fehler_func <- function(e1, e2){           # verwende globale Daten lade_data
    temp_data <- lade_data %>%
-     mutate(kombi_ent_ladung = e1*batt_ladung - batt_entladung/e2) %>%
+     mutate(kombi_ent_ladung = e1*korr_ladung - batt_entladung/e2) %>%
      mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
      mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
-     summarize(f = max(abweichung))
-   return(as.numeric(temp_data$f[1]))
+     #summarize(f = max(abweichung))
+     summarize(f = sum(abweichung^2))
+     return(as.numeric(temp_data$f[1]))
+         
    }
 # --------------------------------------------------------------
 
