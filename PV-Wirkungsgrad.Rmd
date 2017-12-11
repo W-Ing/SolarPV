@@ -1,5 +1,5 @@
 ---
-title: "PV - Wirkungsgrad"
+title: "PV - Datenanalyse"
 output:
   pdf_document:
     toc: true
@@ -15,35 +15,40 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Präliminarien
 
+Die Programmstücke dienen der Auswertung der Daten, die von der PV-Anlage erzeugt und mit Hilfe des SMA-Portals gelesen werden.
 
-Geladen werden die Daten, die von der PV-Anlage mit Hilfe des SMA-Portals gewonnen werden.
-Ziel ist es, in der Tabelle _data_ alle Datensätze aus den SMA-Daten, ergänzt um Hilfsgrößen, zur Verfügung zu stellen.
-
-Die Daten liegen in Dateien tageweise vor, beim Download werden diese von Hand benannt, sie enthalten Datensätze (Zeilen), die im 5-Minuten-Rhythmus erfasst wurden. Beim Einlesen werden sie zusammengefügt.
+Die Daten liegen tageweise in Dateien vor. Beim Download werden diese von Hand benannt, sie enthalten Datensätze (Zeilen), die im 5-Minuten-Rhythmus erfasst wurden. Beim Einlesen werden sie zusammengefügt.
 
 Die Datensätze enthalten die Größen
 
 zeit --- leistung.pv  ---  leistung.stp  ---  netzeinspeisung ---  netzbezug  --- batt_ladung  ---  batt_entladung ---  ladezustand(%)
 
-Die beiden ersten Werte sind identisch, deswegen wird "leistung.stp"" in der Folge sofort gelöscht. 
-Der Ladezustand wird in % der Batteriekapazität angegeben. Laut Herstellerangabe beträgt diese 9,8 kWh, von denen 9,3 KWh verfügbsr sind.
+Einheiten: 
+
+- Zeit als Datum-Stunde-Min-Sek 
+- Alle anderen Größen in W außer 
+- Ladezustand in % der Batteriekapazität. Laut Herstellerangabe beträgt diese 9,8 kWh, von denen 9,3 KWh verfügbar sind.
 
 
-# Vorbereitungen #
+# Technische Vorbereitungen #
 
-### Laden der nötigen Bibliotheken. ###
+### Laden der nötigen Bibliotheken und Definition von Funktionen. ###
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 source("01-Bibliotheken-laden.R")
 ```
 
-###Zur Auswertung werden einige Funktionen benötigt, die hier definiert werden. ###
+
 ```{r}
 source("02-Funktionen-bilden.R")
 ```
 
 ### Einlesen der Dateien "Daten_dd_mm_yyyy.csv": ###
 Alle Größen in der Einheit W, mit Ausnahme von 'ladezustand', dieser wird beim Lesen als Prozentsatz übergeben und anschließend auf $10000 = 100 \%$ normiert weil die Batterie eine Kapazität von annähernd $10 kWh$ besitzt kann dies auch als $Wh$ gelesen werden.
+
+Die beiden ersten Werte sind identisch, deswegen wird "leistung.stp"" in der Folge sofort gelöscht. 
+
 Die Zeilen müssen sortiert werden, weil die Dateien nicht in der korrekten zeitlichen Reihenfolge eingelesen werden.
 ```{r}
 # Einlesen der Datenfiles-----notig: 02-Funktionen-bilden.R----------------------
@@ -52,16 +57,16 @@ source("03-Files-einlesen.R")
 
 ### Ergänzende Spaltenoperationen und Datenkontrollen ###
 
-a)  Die neue Spalte 'ct' zaehlt die Datenzeilen 
-b)  Über 'ladezustand' laeuft eine Glaettungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
+a)  Die neue Spalte 'ct' zählt die Datenzeilen 
+b)  Über 'ladezustand' läuft eine Glättungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
 c) 'month', 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
 d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand und dem vorangegangenen berechnet (NEIN: Prozent! Einheit Wh).
 e)  von W in Wh werden umgerechnet:
     i)   batt_ladung, batt_entladung, 
     ii)  leistung.pv, leistung.stp,
     iii) netzeinspeisung, netzbezug
-   Weil die Leistung jeweils in 5min-Intervallen erhoben wird, wird in dieser Zeit die Arbeit W = P 5min = P (1/12) h verrichtet.
-    Anm.: In der späteren Auswertung wird dies so interpretiert: Eine zur Zeit t erbrachte Leistung P führt zu einer el. Arbeit von $P\cdot 5 \mbox{min}$ im Zeitintervall $t \pm 2,5 \mbox{min}$
+   Weil die Leistung jeweils zur Zeit t in 5min-Intervallen erhoben wird, wird jedem Intervall die Arbeit W = P 5min = P (1/12) h verrichtet.
+    Anm.: In der späteren Auswertung wird dies so interpretiert: Diese el. Arbeit von $P\cdot 5 \mbox{min}$ wird im Zeitintervall $t \pm 2,5 \mbox{min}$ erbracht
 
 
 ```{r}
@@ -69,10 +74,10 @@ e)  von W in Wh werden umgerechnet:
 source("03-Spalten-bearbeiten.R")
 ```
 
-Die Rohdaten werden getrennt in "data" mit Variablen:
+Die Rohdaten werden gespalten in __data__ mit den Variablen:
 zeit batt_ladung batt_entladung ladezustand month week day hour ladediff ct
 
-und "verbrauch" mit Variablen:
+sowie __verbrauch__ mit den Variablen:
 zeit leistung.pv netzeinspeisung netzbezug batt_ladung batt_entladung ladezustand month week day hour ladediff
 
 #  Auswertungen # 

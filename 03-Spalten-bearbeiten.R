@@ -29,7 +29,7 @@ verbrauch <- verbrauch %>%
 
 loesche <- c("leistung.pv","leistung.stp","netzeinspeisung","netzbezug")
 data    <- data %>% select(-one_of(loesche))
-cat('Loesche Spalten aus data', loesche, '.\n')
+cat('Loesche aus data Spalten: ', loesche, '.\n')
 
 # Indexspalteanfuegen ------------------------------------------------
 data <- data %>%                             
