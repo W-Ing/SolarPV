@@ -1,13 +1,13 @@
 ---
 title: "PV - Wirkungsgrad"
 output:
-  html_notebook: default
-  html_document: default
-  df_print: paged
   pdf_document:
     toc: true
     number_sections: true
     toc_depth: 3
+  html_document: default
+  df_print: paged
+  html_notebook: default
   word_document: default
 ---
 
@@ -114,11 +114,11 @@ lade_data <- data %>%
 
 lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+5800    # korrekt wäre, 5800/eta_1, letzteres ist aber noch unbekannt
 
-lade_data <- lade_data %>%
-   mutate(cum_ladung = cumsum(eta_1*korr_ladung - batt_entladung/eta_2),
-          abweichung = abs(cum_ladung - ladezustand),
-          cum_fehler = max(abweichung)
-          )
+# lade_data <- lade_data %>%
+#    mutate(cum_ladung = cumsum(eta_1*korr_ladung - batt_entladung/eta_2),
+#           abweichung = abs(cum_ladung - ladezustand),
+#           cum_fehler = max(abweichung)
+#           )
 
 # -------------------------------------------------------------------
 fehler_func <- function(e1, e2){           # verwende globale Daten lade_data
@@ -127,7 +127,7 @@ fehler_func <- function(e1, e2){           # verwende globale Daten lade_data
      mutate(cum_ladung = cumsum(kombi_ent_ladung)) %>%
      mutate(abweichung = abs(cum_ladung - ladezustand)) %>%
      #summarize(f = max(abweichung))
-     summarize(f = sum(abweichung^2))
+     summarize(f = sum(abweichung^2))      # Bem: Supremumsnorm liefert denselben Wert
      return(as.numeric(temp_data$f[1]))
          
    }
