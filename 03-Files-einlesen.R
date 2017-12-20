@@ -30,6 +30,9 @@ data <- rbind(data, data0)
 }
 rm(data0)
 
+source("03-Files-Kopfzeilen_pruefen.R") # Um sicherzustellen, dass die Reihenfolge stimmt, kann händisch falsch gemacht werden!
+
+
 #cat('gelesen:\n',files, '\n')
 
 # Umwandeln des mit Komma geschrieben Prozentwerts in eine numerische Variable und Umrechnung 100 % entsprechen 10000

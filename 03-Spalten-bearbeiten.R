@@ -20,7 +20,14 @@ data[is.na(data)] <- 0
 
 source("03_Quellen_pruefen.R")
 
-
+# Indexspalteanfuegen ------------------------------------------------
+data <- data %>%                             
+  mutate(ct = 1, 
+         ct = cumsum(ct))
+cat('Der Datensatz enthaelt jetzt ',max(data$ct), 'Zeilen.\n')
+#
+# -------------------------------------------------------------------
+cat("\n")
 cat('Erzeuge Tabelle verbrauch \n')
 verbrauch <- data
 verbrauch <- verbrauch %>% 
@@ -31,13 +38,7 @@ loesche <- c("leistung.pv","leistung.stp","netzeinspeisung","netzbezug")
 data    <- data %>% select(-one_of(loesche))
 cat('Loesche aus data Spalten: ', loesche, '.\n')
 
-# Indexspalteanfuegen ------------------------------------------------
-data <- data %>%                             
-  mutate(ct = 1, 
-         ct = cumsum(ct))
-cat('Der Datensatz enthaelt jetzt ',max(data$ct), 'Zeilen.\n')
-#
-# -------------------------------------------------------------------
+
 # -----------------------------------------------------------------------------
 # Ladezustand glaetten
  data[is.na(data)] <- 0

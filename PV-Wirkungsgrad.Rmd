@@ -1,14 +1,15 @@
 ---
 title: "PV - Datenanalyse"
 output:
+  html_notebook: default
+  html_document: default
+  df_print: paged
   pdf_document:
     toc: true
     number_sections: true
     toc_depth: 3
-  html_document: default
-  df_print: paged
-  html_notebook: default
   word_document: default
+date: "`r format(Sys.time(), '%d %B %Y')`"
 ---
 
 
@@ -34,23 +35,27 @@ Einheiten:
 
 # Technische Vorbereitungen #
 
+Dient nur der Darstellung des Codes, kann überlesen werden, wenn es nur um Anlagendaten geht.
+
 ### Laden der nötigen Bibliotheken und Definition von Funktionen. ###
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 source("01-Bibliotheken-laden.R")
 ```
 
 
-```{r}
+```{r include=FALSE}
 source("02-Funktionen-bilden.R")
 ```
 
 ### Einlesen der Dateien "Daten_dd_mm_yyyy.csv": ###
-Alle Größen in der Einheit W, mit Ausnahme von 'ladezustand', dieser wird beim Lesen als Prozentsatz übergeben und anschließend auf $10000 = 100 \%$ normiert weil die Batterie eine Kapazität von annähernd $10 kWh$ besitzt kann dies auch als $Wh$ gelesen werden.
 
-Die beiden ersten Werte sind identisch, deswegen wird "leistung.stp"" in der Folge sofort gelöscht. 
+Für jeden Tag liegt eine Datei vor, mit Messwerten im 5-min-Abstand. Alle in der Einheit W, mit Ausnahme von 'ladezustand'. Dieser wird beim Lesen als Prozentsatz übergeben und anschließend auf $10000 = 100 \%$ normiert. Weil die Batterie eine Kapazität von annähernd $10\, kWh$ besitzt, kann die Zahl 10000 grob mit der Einheit $Wh$ gelesen werden.
+
+Beim Einlesen werden die Kopfzeilen und die erste, sonst leere Datenzeile für 0:00 Uhr ignoriert. Für jeden Tag gibt es also 288 Zeilen, endend mit 0:00 der Folgetages (diese Zeile wird aufgenommen).
 
 Die Zeilen müssen sortiert werden, weil die Dateien nicht in der korrekten zeitlichen Reihenfolge eingelesen werden.
-```{r}
+
+```{r echo=FALSE, message=TRUE}
 # Einlesen der Datenfiles-----notig: 02-Funktionen-bilden.R----------------------
 source("03-Files-einlesen.R")
 ```
@@ -60,45 +65,47 @@ source("03-Files-einlesen.R")
 a)  Die neue Spalte 'ct' zählt die Datenzeilen 
 b)  Über 'ladezustand' läuft eine Glättungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
 c) 'month', 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
-d) 'ladediff' wird als Differenz von Ladezustand zwischen dem aktuellen Zustand und dem vorangegangenen berechnet (NEIN: Prozent! Einheit Wh).
+d) 'ladediff' wird als Differenz zwischen dem aktuellen Zustand und dem vorangegangenen Ladezustand berechnet.
 e)  von W in Wh werden umgerechnet:
     i)   batt_ladung, batt_entladung, 
-    ii)  leistung.pv, leistung.stp,
+    ii)  leistung.pv, leistung.stp, (bei der bestehende Anlage identisch)
     iii) netzeinspeisung, netzbezug
-   Weil die Leistung jeweils zur Zeit t in 5min-Intervallen erhoben wird, wird jedem Intervall die Arbeit W = P 5min = P (1/12) h verrichtet.
+
+Weil die Leistung jeweils zur Zeit t in 5min-Intervallen erhoben wird, wird in jedem Intervall die Arbeit W = P 5min = P (1/12) h verrichtet.
     Anm.: In der späteren Auswertung wird dies so interpretiert: Diese el. Arbeit von $P\cdot 5 \mbox{min}$ wird im Zeitintervall $t \pm 2,5 \mbox{min}$ erbracht
 
 
-```{r}
+```{r echo=FALSE}
 # Ergaenzende Spaltenoperationen ----------------------------------------------
 source("03-Spalten-bearbeiten.R")
 ```
 
 Die Rohdaten werden gespalten in __data__ mit den Variablen:
-zeit batt_ladung batt_entladung ladezustand month week day hour ladediff ct
+zeit, batt_ladung, batt_entladung, ladezustand, month, week, day, hour, ladediff, ct
 
 sowie __verbrauch__ mit den Variablen:
-zeit leistung.pv netzeinspeisung netzbezug batt_ladung batt_entladung ladezustand month week day hour ladediff
+zeit, leistung.pv, netzeinspeisung, netzbezug, batt_ladung, batt_entladung, ladezustand, month, week, day, hour, ladediff,ct
 
 #  Auswertungen # 
 
 ## Einfache Summenbildungen ##
 
-### Monatssummen ###
+### Wochen- und Monatssummen ###
 
-Jetzt neuen code mit Variable fuer Woche und Monat
+Die folgenden Diagramme fassen die Lade- und Entladevorgänge der Batterie zusammen. Die daraus berechneten Wirkungsgrade sind gerade bei wöchentlicher Berechnung allenfalls Anhaltspunkte, weil der Batteriezustand zu Anfang bzw. zum Ende der Woche i.d.R. nicht gleich sein wird.
 
-```{r}
-source("04_Batterie_Ent_ladung.R")                # Funktion bilden
+```{r echo=FALSE}
+source("04_Batterie_Ent_ladung.R")                
 erzeuge_ent_lade_diagramm(data,week,"woechentlich","Woche")
 erzeuge_ent_lade_diagramm(data,month,"monatlich", "Monat")
 
 ```
 
 
-### Verbrauch und Erzeugung - Datenübersicht (Eigenverbrauch fürs Finanzamt)
+### Verbrauch und Erzeugung - Datenübersicht 
+Die folgenden Diagramme haben die selbe Struktur, wie entsprechende Seiten der Website http://sunnyportal.com/. 
 
-```{r}
+```{r echo=FALSE}
 source("04_Verbrauch_u_Erzeugung.R")
 verb_u_erzeugung(verbrauch, "Verbrauch", "Woche")   
 verb_u_erzeugung(verbrauch, "Verbrauch", "Monat")
@@ -109,102 +116,67 @@ verb_u_erzeugung(verbrauch, "Erzeugung", "Monat")
 
 ### Batteriezustand ###
 
-
 Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batterie in den Monaten aufgetreten sind. Ausgezählt wird in  Intervallen der Breite 0,400 kWh. (Amn: Ränder prüfen!)
 
-
-```{r}
+```{r echo=FALSE}
   batt.zustand <- data %>% 
     select(zeit, month, week, day,hour, ladezustand) 
   ggplot(batt.zustand) +
    #geom_bar(mapping = aes(x = ladezustand, fill=month ))   
    stat_bin(mapping = aes(x = ladezustand, fill=month, order=month ), bins = 25) #+
+   #scale_y_log10()
    #scale_fill_brewer(palette="red")
 ```
 ## Ladung und Entladung summieren und mit Ladezustand vergleichen
 
-```{r fig.width=16, warning=FALSE}
+### Abschätzung von Wirkungsgraden für die Ladung bzw. die Entladung der Batterie 
 
+Durch die Annahme von zwei (konstanten) Wirkungsgraden für den Ladevorgang und den Entladevorgang kann aus den gemessenen Werten für die Batterieladung und -entladung fiktiv ein Ladezustand der Batterie berechnet und mit den Messwerten für den Ladezustand verglichen werden. Durch Auswahl der besten Approximation im Sinn einer zu wählenden Norm ergibt sich eine Schätzung für die beiden Wirkungsgrade.
+
+```{r echo=FALSE, fig.width=16, warning=FALSE}
+function.names <- c("norm_max_norm","norm_2wurzel_aus_2pot","norm_3wurzel_aus_3pot") # Abstandsnormen
+num <- 3  # Waehle aus
+waehle_norm_fu<- get(function.names[num])
+merke_norm_fu <-  function.names[num]
+#cat("Gewählte Abstandsnorm:", as.character(quote(norm_2wurzel_aus_2pot))," \n") 
+cat("Gewählte Abstandsnorm:", function.names[num]," \n") 
 source("04_Modell_Ent_Lade_Wirkungsgrad.R") # 
+```
 
+### Visualisierung der Aproxximationsqualität ###
+
+```{r echo=FALSE, fig.height=16, fig.width=16}
+ggplot(Mat_EtaPaare, aes(x = eta_1 , y = eta_2, z = fehler)) +
+  geom_point() +
+  geom_contour(aes(colour=..level..), bins=50) +
+  scale_color_gradient(low="red", high="blue") #+
+  #coord_cartesian(xlim = c(0.975, 1.000), ylim = c(0.688,0.710))
+```
+
+Die Modellierung mit Hilfe zweier konstanter Wirkungsgrade ist ersichtlich wenig trennscharf: Die beste Approxiamtionsqualität wird entlang einer Kurve erreicht, die vermutlich durch das Produkt eta_1 mal eta_2 = constant beschrieben wird. 
+
+Zum Vergleich: Verlauf des gemessenen und des modellierten Ladezustands
+
+```{r echo=FALSE, fig.width=16, warning=FALSE}
+
+subtitel_char <- paste("grün: tatsächlich, blau: modelliert mit eta_1 = ", eta_1, "und eta_2 = ",eta_2," optimiert bzl.", merke_norm_fu )
 ggplot(lade_data) +
   geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
-  geom_point(mapping = aes(x=zeit,y=ladezustand), color = "green") +
+  geom_point(mapping = aes(x=zeit,y=ladezustand_Wh), color = "green") +
   labs(x = "Zeit", 
        y = "Ladezustand (Wh)",
        title = "Modellierter und tatsächlicher Ladezustand",
-       subtitle = "grün: tatsächlich, blau: modelliert")
+       subtitle = subtitel_char)
 
 ```
 
+Aus dem Diagramm lässt sich erkennen, dass die Modellvorstellung eines konstanten Wirkungsgrades offensichtlich nur sehr grob gültig ist. 
 
-
-## Tägliche Minima und Maxima identifizieren  - optional ##
-
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-# Minima und MAxima markieren frueher R_Min_Max_mark.R
-# source("04_Auswertungen_Min_Max_tgl_Per.R")
-#-----------------------------------------------------------------------------------
-```
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-# Minima und MAxima markieren frueher R_Min_Max_mark.R
-# source("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R")
-```
-
-## Perioden zwischen horizontalen Niveaus bilden - Neutrale Zyklen ##
-
-Ein _neutraler Zyklus_ ist eine Lade-Entlade-Vorgang der von einem Ladezustand des Akkus ausgehend zu diesem zurückkehrt.
-Für diese ist es sinnvoll, Wirkungsgrade als Verhältnis von Output zu Input zu bilden.
-
-"level" legt die Höhe des Ausgangszustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
-Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (später mit UP bzw. DOWN gekennzeichnet). 
-
-### Bildung der Grundfunktionen
-
-1. Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe der Daten und l zur Übergabe des Levels
-        
-        Erzeugt die Spalten, die einen Zyklus mit einem Zähler charakteriseren und dessen Länge zählen:
-        zyklus --- len_of_zyklus
-
-2. Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data 
-
-        Erzeugt die innerhalb eines Zyklus konstanten Werte: 
-        max_level : max(ladezustand),
-        min_level : min(ladezustand),
-        hub_level : max_level - min_level,
-        mit_level : (min_level+max_level)/2,
-        durchsatz : hub_level/len_zyklus*12, Einheit  Wh zwischen Min und Max / Stunde
-        signum    : Wenn max_level über dem vorgegebenen Level  "UP" sonst "DOWN"
-        lev       : Der gewählte Level gespeichert in % im Hinblick auf die Verkettung der Daten zu mehreren Levels 
-```{r include=FALSE}
-# NEU_ Perioden zwischen horizontalen Niveaus identifizieren ALT :04_Auswertungen_gen_zu Zyklus mit Level.R
-source("04_Zyklus_Daten_gen.R",local=TRUE)
-#-----------------------------------------------------------------------------------
-# Ladung und Entladung in jedem Zyklus addieren 04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R
-source("04_Zyklus_Summen_gen.R")
-#------------------------------------------------------------------------------------
-source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbose = getOption("verbose"))
-```
-
-
-### Zusammenfassung dieses Vorgangs ###
-
-Dazu wird folgende Funktion definiert
-
-```{r}
-zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Levels
-  xdata = zyklus_daten_gen(xdata, x)
-  xdata = zyklus_summen_gen(xdata,x)
-  red_data = zyklus_reduzieren(xdata)
-  return(red_data)
-}
-
-```
-
-Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus.
 
 
 ## Strecken monotoner Entladung ##
+
+Die beiden oben gefundenen Wirkungsgrad für das LAden der Batterie und für den Entladevorgang sollten sich auch wiederfinden lassen, wenn man Perioden beobachtet, in den die Batterie monoton geladen oder entladen wird. Dies ist das Ziel der folgenden Auswertung.
 
 ```{r}
 source("04_Auswertungen_Monotone_Entladung_finden.R")
@@ -321,6 +293,74 @@ temp %>%
    facet_wrap(~ month)
 
 ```
+
+
+## Tägliche Minima und Maxima identifizieren  - optional ##
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# Minima und MAxima markieren frueher R_Min_Max_mark.R
+# source("04_Auswertungen_Min_Max_tgl_Per.R")
+#-----------------------------------------------------------------------------------
+```
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# Minima und MAxima markieren frueher R_Min_Max_mark.R
+# source("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R")
+```
+
+## Perioden zwischen horizontalen Niveaus bilden - Neutrale Zyklen ##
+
+Ein _neutraler Zyklus_ ist eine Lade-Entlade-Vorgang der von einem Ladezustand des Akkus ausgehend zu diesem zurückkehrt.
+Für diese ist es sinnvoll, Wirkungsgrade als Verhältnis von Output zu Input zu bilden.
+
+"level" legt die Höhe des Ausgangszustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
+Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (später mit UP bzw. DOWN gekennzeichnet). 
+
+### Bildung der Grundfunktionen
+
+1. Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe der Daten und l zur Übergabe des Levels
+        
+        Erzeugt die Spalten, die einen Zyklus mit einem Zähler charakteriseren und dessen Länge zählen:
+        zyklus --- len_of_zyklus
+
+2. Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data 
+
+        Erzeugt die innerhalb eines Zyklus konstanten Werte: 
+        max_level : max(ladezustand),
+        min_level : min(ladezustand),
+        hub_level : max_level - min_level,
+        mit_level : (min_level+max_level)/2,
+        durchsatz : hub_level/len_zyklus*12, Einheit  Wh zwischen Min und Max / Stunde
+        signum    : Wenn max_level über dem vorgegebenen Level  "UP" sonst "DOWN"
+        lev       : Der gewählte Level gespeichert in % im Hinblick auf die Verkettung der Daten zu mehreren Levels 
+```{r include=FALSE}
+# NEU_ Perioden zwischen horizontalen Niveaus identifizieren ALT :04_Auswertungen_gen_zu Zyklus mit Level.R
+source("04_Zyklus_Daten_gen.R",local=TRUE)
+#-----------------------------------------------------------------------------------
+# Ladung und Entladung in jedem Zyklus addieren 04_Auswertungen_Summ_Ent_Ladung_in_Level_Halbper.R
+source("04_Zyklus_Summen_gen.R")
+#------------------------------------------------------------------------------------
+source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbose = getOption("verbose"))
+```
+
+
+### Zusammenfassung dieses Vorgangs ###
+
+Dazu wird folgende Funktion definiert
+
+```{r}
+zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Levels
+  xdata = zyklus_daten_gen(xdata, x)
+  xdata = zyklus_summen_gen(xdata,x)
+  red_data = zyklus_reduzieren(xdata)
+  return(red_data)
+}
+
+```
+
+Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus.
+
+
+
 
 # Graphische Auswertungen #
 ## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz ##
