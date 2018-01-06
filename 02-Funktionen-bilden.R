@@ -33,6 +33,11 @@ in_out_pd_mitteln <- rollify(.f = ~sum(.x)/2, window = 2, na_value = NULL)
 norm_2wurzel_aus_2pot <- function(x){
   return(sqrt(sum(x^2)))
 }
+
+norm_summen_norm <- function(x){
+  return(sum(x))
+}
+
 norm_max_norm <- function(x){
   return(max(x))
 }

@@ -1,8 +1,8 @@
 # Funktion definieren
 
-erzeuge_ent_lade_diagramm <- function(df, period, helptext,xtext){
-  qperiod <- enquo(period)
-  
+erzeuge_ent_lade_diagramm <- function(df, period, helptext,xtext){    # df Daten, period week month year
+  qperiod <- enquo(period)                                            # helptext woechentlich, monatlich, jaehrlich
+                                                                      # xtext Woche Monat Jahr
   Titeltext   = paste("Ladung und Entladung der Batterie", helptext)
   xAchsentext = xtext
   mnumber     = ifelse(xAchsentext == "Monat", 12, 52)

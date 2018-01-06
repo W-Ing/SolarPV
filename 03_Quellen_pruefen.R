@@ -4,16 +4,16 @@
 
 
 
-# Pruefen auf doppelte Zeitangaben---------------------------------------
-n <- nrow(data)
-m <- nrow(distinct(data,zeit))
-
-cat("Kontrolle auf redundante Zeilen: ")
-
-if (n != m) {
-     cat("Warnung, es gibt doppelte Zeiten.\n")
-  } else {cat("Ok, es gibt keine doppelte Zeiten.\n\n")}
-
+# # Pruefen auf doppelte Zeitangaben---------------------------------------
+# n <- nrow(data)
+# m <- nrow(distinct(data,zeit))
+# 
+# cat("Kontrolle auf redundante Zeilen: ")
+# 
+# if (n != m) {
+#      cat("Warnung, es gibt doppelte Zeiten.\n")
+#   } else {cat("Ok, es gibt keine doppelte Zeiten.\n\n")}
+# 
 
 # -----------------------------------------------------------------------
 # Extrahiere Zeiten und Tage im Zeit/Date Format

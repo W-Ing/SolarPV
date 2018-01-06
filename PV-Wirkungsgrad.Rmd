@@ -1,13 +1,13 @@
 ---
 title: "PV - Datenanalyse"
 output:
-  html_notebook: default
-  html_document: default
-  df_print: paged
   pdf_document:
     toc: true
     number_sections: true
     toc_depth: 3
+  html_document: default
+  df_print: paged
+  html_notebook: default
   word_document: default
 date: "`r format(Sys.time(), '%d %B %Y')`"
 ---
@@ -94,7 +94,7 @@ zeit, leistung.pv, netzeinspeisung, netzbezug, batt_ladung, batt_entladung, lade
 
 Die folgenden Diagramme fassen die Lade- und Entladevorgänge der Batterie zusammen. Die daraus berechneten Wirkungsgrade sind gerade bei wöchentlicher Berechnung allenfalls Anhaltspunkte, weil der Batteriezustand zu Anfang bzw. zum Ende der Woche i.d.R. nicht gleich sein wird.
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=16}
 source("04_Batterie_Ent_ladung.R")                
 erzeuge_ent_lade_diagramm(data,week,"woechentlich","Woche")
 erzeuge_ent_lade_diagramm(data,month,"monatlich", "Monat")
@@ -105,7 +105,7 @@ erzeuge_ent_lade_diagramm(data,month,"monatlich", "Monat")
 ### Verbrauch und Erzeugung - Datenübersicht 
 Die folgenden Diagramme haben die selbe Struktur, wie entsprechende Seiten der Website http://sunnyportal.com/. 
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=16}
 source("04_Verbrauch_u_Erzeugung.R")
 verb_u_erzeugung(verbrauch, "Verbrauch", "Woche")   
 verb_u_erzeugung(verbrauch, "Verbrauch", "Monat")
@@ -134,11 +134,10 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
 Durch die Annahme von zwei (konstanten) Wirkungsgraden für den Ladevorgang und den Entladevorgang kann aus den gemessenen Werten für die Batterieladung und -entladung fiktiv ein Ladezustand der Batterie berechnet und mit den Messwerten für den Ladezustand verglichen werden. Durch Auswahl der besten Approximation im Sinn einer zu wählenden Norm ergibt sich eine Schätzung für die beiden Wirkungsgrade.
 
 ```{r echo=FALSE, fig.width=16, warning=FALSE}
-function.names <- c("norm_max_norm","norm_2wurzel_aus_2pot","norm_3wurzel_aus_3pot") # Abstandsnormen
+function.names <- c("norm_max_norm","norm_summen_norm", "norm_2wurzel_aus_2pot","norm_3wurzel_aus_3pot") # Abstandsnormen
 num <- 3  # Waehle aus
 waehle_norm_fu<- get(function.names[num])
 merke_norm_fu <-  function.names[num]
-#cat("Gewählte Abstandsnorm:", as.character(quote(norm_2wurzel_aus_2pot))," \n") 
 cat("Gewählte Abstandsnorm:", function.names[num]," \n") 
 source("04_Modell_Ent_Lade_Wirkungsgrad.R") # 
 ```
@@ -149,17 +148,18 @@ source("04_Modell_Ent_Lade_Wirkungsgrad.R") #
 ggplot(Mat_EtaPaare, aes(x = eta_1 , y = eta_2, z = fehler)) +
   geom_point() +
   geom_contour(aes(colour=..level..), bins=50) +
-  scale_color_gradient(low="red", high="blue") #+
+  scale_color_gradient(low="red", high="blue") +
+  geom_line(aes(x= eta_1, y=eta_1_max*eta_2_max/eta_1), color ="green")
   #coord_cartesian(xlim = c(0.975, 1.000), ylim = c(0.688,0.710))
 ```
 
-Die Modellierung mit Hilfe zweier konstanter Wirkungsgrade ist ersichtlich wenig trennscharf: Die beste Approxiamtionsqualität wird entlang einer Kurve erreicht, die vermutlich durch das Produkt eta_1 mal eta_2 = constant beschrieben wird. 
+Die Modellierung mit Hilfe zweier konstanter Wirkungsgrade ist ersichtlich wenig trennscharf: Die beste Approxiamtionsqualität wird entlang einer Kurve erreicht, die annähernd durch das Produkt eta_1 mal eta_2 = constant beschrieben wird. 
 
 Zum Vergleich: Verlauf des gemessenen und des modellierten Ladezustands
 
 ```{r echo=FALSE, fig.width=16, warning=FALSE}
 
-subtitel_char <- paste("grün: tatsächlich, blau: modelliert mit eta_1 = ", eta_1, "und eta_2 = ",eta_2," optimiert bzl.", merke_norm_fu )
+subtitel_char <- paste("grün: tatsächlich, blau: modelliert mit eta_1 = ", eta_1_max, "und eta_2 = ",eta_2_max," optimiert bzl.", merke_norm_fu )
 ggplot(lade_data) +
   geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
   geom_point(mapping = aes(x=zeit,y=ladezustand_Wh), color = "green") +
@@ -176,13 +176,15 @@ Aus dem Diagramm lässt sich erkennen, dass die Modellvorstellung eines konstant
 
 ## Strecken monotoner Entladung ##
 
-Die beiden oben gefundenen Wirkungsgrad für das LAden der Batterie und für den Entladevorgang sollten sich auch wiederfinden lassen, wenn man Perioden beobachtet, in den die Batterie monoton geladen oder entladen wird. Dies ist das Ziel der folgenden Auswertung.
+Die beiden oben gefundenen Wirkungsgrad für das Laden der Batterie und für den Entladevorgang sollten sich auch wiederfinden lassen, wenn man Perioden beobachtet, in den die Batterie monoton geladen oder entladen wird. Dies ist das Ziel der folgenden Auswertung.
 
 ```{r}
-source("04_Auswertungen_Monotone_Entladung_finden.R")
+#source("04_Auswertungen_Monotone_Entladung_finden.R")
+# ZIEL 
+source("04-Auswertungen_Monotonie_mit_Ent_Ladung.R")
 ```
 
-```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=TRUE}
 
 temp <- monotonie_mark(data)
 temp[is.na(temp)] <- 0
@@ -272,7 +274,7 @@ temp <- temp %>%
 #    facet_wrap(~ l_signum)
 ```
 
-```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=TRUE}
 temp %>% 
    filter(day >= "2017-10-01") %>% 
    filter(r_entladung < 9990 & r_entladung > 100) %>%

@@ -24,9 +24,11 @@ verb_u_erzeugung <- function(verb.data, v_oder_e,Ztraum){ # Datentibble - week/m
   if(v_oder_e == "Verbrauch") { 
     diff_key = c("netzbezug", "batt_entladung", "direktverbrauch")
     yText = "Verbrauch (kWh)"
+    subtitle_Text = "Herkunft"
   } else  {
     diff_key = c("netzeinspeisung", "batt_ladung", "direktverbrauch")
     yText = "Von PV-Anlage erzeugt (kWh)"
+    subtitle_Text = "Verwendung"
   }
   
   verb.data$month = as.numeric(verb.data$month)          # Besser bereits früh angleichen nach Prüfung schon in data
@@ -51,7 +53,7 @@ verb_u_erzeugung <- function(verb.data, v_oder_e,Ztraum){ # Datentibble - week/m
               y     = yText,
               fill  = " Art",
               title = v_oder_e,
-              subtitle = "differenziert nach Verwendung") +
+              subtitle = paste("differenziert nach", subtitle_Text)) +
     scale_x_continuous(breaks = seq(1, mnumber,  by = 1)) +
     geom_text(aes(label=round(Wert,-0)), size= 3, data = V_E.long, position = position_stack(vjust=0.5))
 }

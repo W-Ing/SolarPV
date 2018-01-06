@@ -9,17 +9,6 @@ lade_data <- data %>%
 lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+5800    # korrekt wäre, 5800/eta_1, letzteres ist aber noch unbekannt
 
 # -------------------------------------------------------------------
-# norm_wurzel_aus_qu <- function(x){ JEtzt in 02-Funktionen-bilden.R
-#       return(sqrt(sum(x^2)))
-# }
-# norm_max_norm <- function(x){
-#      return(max(x))
-# }
-# 
-# norm_drwurzel_aus_drpot <- function(x){
-#   return((sum(x^3))^(1/3))
-# }
-
 
 fehler_func <- function(e1, e2,norm_func){           # verwende globale Daten lade_data
   temp_data <- lade_data %>%
@@ -80,11 +69,11 @@ Mat_EtaPaare <- Mat_EtaPaare %>%
   
 
 
-eta_1 <- as.numeric(kurz[1,1])
-eta_2 <- as.numeric(kurz[1,2])
+eta_1_max <- as.numeric(kurz[1,1])
+eta_2_max <- as.numeric(kurz[1,2])
 
 lade_data <- lade_data %>%
-  mutate(cum_ladung = cumsum(eta_1*korr_ladung - batt_entladung/eta_2))
+  mutate(cum_ladung = cumsum(eta_1_max*korr_ladung - batt_entladung/eta_2_max))
 
-cat("Fuer Ladung und Entladung ergeben sich die Wirkungsgrade", eta_1, " und", eta_2, " \n")
+cat("Fuer Ladung und Entladung ergeben sich die Wirkungsgrade", eta_1_max, " und", eta_2_max, " \n")
 

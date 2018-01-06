@@ -1,8 +1,11 @@
 # R-Code fuer Input # library(zoo)
+
+source("02-File_analysieren_umbenennen.R")
+
 data <- tibble()
 data0 <- tibble()
 path_to_data <- "./Daten/"
-files <- dir(path=path_to_data, pattern=glob2rx('^Daten_*_11_2017.csv|^Daten_*_10_2017.csv|^Daten_*_12_2017.csv'))  # ^Daten_*_09_2017.csv| |'^Daten_*_11_2017.csv'
+files <- dir(path=path_to_data, pattern=glob2rx('^Daten_*_11_2017.csv|^Daten_*_10_2017.csv|^Daten_*_12_2017.csv|^*SUNNY.csv'))  # ^Daten_*_09_2017.csv| |'^Daten_*_11_2017.csv'
 files
 for (file in files)
 {    file=paste(path_to_data,file,sep='',collapse='')
@@ -47,6 +50,16 @@ data <- data %>%
 
 
 #-------------------------------------------------------------------
+
+# Pruefen auf doppelte Zeitangaben---------------------------------------
+n <- nrow(data)
+m <- nrow(distinct(data,zeit))
+
+cat("\n")
+cat("Kontrolle auf redundante Zeilen: \n")
+if (n != m) {
+     cat("Warnung, es gibt doppelte Zeiten.\n")
+  } else {cat("Ok, es gibt keine doppelte Zeiten.\n\n")}
 
 
 
