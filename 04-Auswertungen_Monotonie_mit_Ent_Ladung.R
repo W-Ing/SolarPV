@@ -9,9 +9,9 @@ stat_lade_date <- data %>%
                eins      = 1) %>% 
         group_by(sig_lad) %>% 
                summarize(pos = sum(eins) )
- 
-cat("Es werden \n",stat_lade_date$pos[1]," 5min-Intervalle negativer und \n", stat_lade_date$pos[3]," Intervalle positiver Bilanz registiert. \n")
-cat(" ",stat_lade_date$pos[2], "Intervalle sind neutral.\n")
+cat("Vorkontrolle:") 
+cat("Es werden\n",stat_lade_date$pos[1],"5min-Intervalle negativer und\n", stat_lade_date$pos[3],"Intervalle positiver Bilanz registiert. \n")
+cat("",stat_lade_date$pos[2], "Intervalle sind neutral.\n")
 
 lade_strecken <- data %>% 
   ungroup() %>% 

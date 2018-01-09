@@ -35,7 +35,7 @@ Einheiten:
 
 ```{r echo=FALSE}
 # Grunddaten des Sytems:
-batt_kapazitaet <- 0.93 # von 10 kWh
+batt_kapazitaet <- 0.98 # von 10 kWh
 cat("Im folgenden wird mit einer Batteriekapazität von",batt_kapazitaet,"x 10 kWh gerechnet.\n")
 ```
 Es wird sich herausstellen, dass dieser Wert für die Abschätzung von Teilwirkungsgraden eine wesentliche Bedeutung hat.
@@ -134,11 +134,12 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
    #scale_y_log10()
    #scale_fill_brewer(palette="red")
 ```
-## Ladung und Entladung summieren und mit Ladezustand vergleichen
+
+## Ladung und Entladung summieren und mit Ladezustand vergleichen ##
 
 ### Abschätzung von Wirkungsgraden für die Ladung bzw. die Entladung der Batterie 
 
-Durch die Annahme von zwei (konstanten) Wirkungsgraden für den Ladevorgang und den Entladevorgang kann aus den gemessenen Werten für die Batterieladung und -entladung fiktiv ein Ladezustand der Batterie berechnet und mit den Messwerten für den Ladezustand verglichen werden. Durch Auswahl der besten Approximation im Sinn einer zu wählenden Norm ergibt sich eine Schätzung für die beiden Wirkungsgrade.
+Durch die Annahme von zwei (konstanten) Wirkungsgraden für den Ladevorgang und den Entladevorgang kann aus den gemessenen Werten für die Batterieladung und -entladung fiktiv ein Ladezustand der Batterie berechnet und mit den Messwerten für den Ladezustand verglichen werden. Durch Auswahl der besten Approximation im Sinn einer geeigneten Norm ergibt sich eine Schätzung für die beiden Wirkungsgrade.
 
 ```{r eval=FALSE, fig.width=16, warning=FALSE, include=FALSE}
 function.names <- c("norm_max_norm","norm_summen_norm", "norm_2wurzel_aus_2pot","norm_3wurzel_aus_3pot") # Abstandsnormen
@@ -148,8 +149,6 @@ merke_norm_fu <-  function.names[num]
 cat("Gewählte Abstandsnorm:", function.names[num]," \n") 
 source("04_Modell_Ent_Lade_Wirkungsgrad.R") # 
 ```
-
-
 
 
 ```{r eval=FALSE, fig.height=16, fig.width=16, include=FALSE}
@@ -176,7 +175,7 @@ Zum Vergleich: Verlauf des gemessenen und des modellierten Ladezustands
 
 ```{r echo=FALSE, fig.width=16, warning=FALSE}
 
-subtitel_char <- paste("grün: tatsächlich, blau: modelliert mit eta_1 = ", eta_1_max, "und eta_2 = ",eta_2_max," optimiert bzl.", merke_norm_fu )
+subtitel_char <- paste("grün: tatsächlich, blau: modelliert mit eta_1 = ", eta_1_max, "und eta_2 = ",eta_2_max)
 ggplot(lade_data) +
   geom_point(mapping = aes(x=zeit,y=cum_ladung),  color = "blue")  +
   geom_point(mapping = aes(x=zeit,y=ladezustand_Wh), color = "green") +
@@ -190,32 +189,40 @@ ggplot(lade_data) +
 Aus dem Diagramm lässt sich erkennen, dass die Modellvorstellung eines konstanten Wirkungsgrades offensichtlich nur sehr grob gültig ist. 
 Zu vermuten sind geänderte Wirkungsgrade im Bereich der beiden extremen LAdezustände nahe 100 bzw. 0 %.
 
-
-
 ## Strecken monotoner Entladung ##
 
-Die beiden oben gefundenen Wirkungsgrad für das Laden der Batterie und für den Entladevorgang sollten sich auch wiederfinden lassen, wenn man Perioden beobachtet, in den die Batterie monoton geladen oder entladen wird. Dies ist das Ziel der folgenden Auswertung.
+Die beiden oben gefundenen Wirkungsgrade für das Laden der Batterie und für den Entladevorgang sollten sich auch wiederfinden lassen, wenn man Perioden beobachtet, in den die Batterie monoton geladen oder entladen wird. Dies ist das Ziel der folgenden Auswertung.
 
 ### Monotonie im Ladeverhalten ###
 
-Es werden die zeitlichen Strecken erfasst, in denen die Ladebilanz (batt_ladung-batt_entladung) konstantes Vorzeichen (+/-1 oder 0) hat.Das Resultat des Ladevorgangs wird mit der Änderung des Ladezustands verglichen. Problematisch ist dabei, dass die Erfassung des Ladezustands wesentlich gröber ist (Schritte von 100 Wh) als die des Ladevorgangs. 
+Es werden die zeitlichen Abschnitte erfasst, in denen die Ladebilanz (batt_ladung-batt_entladung) konstantes Vorzeichen (+/-1 oder 0) hat.Das Resultat des Ladevorgangs wird mit der Änderung des Ladezustands verglichen. 
+Als Ausgangspunkt dient also das Ladeverhalten, die Summation der Werte wird verglichen mit dem tatsächlich erreichten Ladezustand.
+
+Problematisch ist dabei, dass die Erfassung des __Ladezustands__ wesentlich gröber ist (Schritte von ca. 100 Wh) als die des __Ladevorgangs__. 
 
 ```{r echo=FALSE, fig.width=16, message=FALSE, warning=FALSE, paged.print=TRUE}
 source("04-Auswertungen_Monotonie_mit_Ent_Ladung.R")
 plot(p+ theme_dark())
 ```
+Bei kurzen Ladevorgängen streuen die Wirkungsgrade erwartungsgemäß sehr stark. Die Wirkungsgrade für Ladevorgänge (positiver Bilanz) streuen um Werte Nahe Eins (rote Punkte). Wegen der begrenzten Sonnenscheindauer kann die zugehörige Ladedauer bei den ausgewerteten Jahreszeiten 7 Stunden natürlich nicht überschreiten. Anders die Entladevorgänge, die bis zu fast einen Tag andauern können. Ihre Wirkungsgrade gruppieren sich um Werte bei 0,7 wie dies von der obigen Modellierung schon nahegelegt wurde. 
 
+### Bilanzierung der Differenzen orientiert am Ladezustand im Vergleich zu den Lade-/Entladevorgängen ###
 
-### Bilanzierung der Differenzen im Ladezustand im Vergleich zu den Lade-/Entladevorgängen ###
+Umgekehrt wie im vorigen Abschnitt erfolgt die Orientierung an den vorliegenden Ladezuständen bzw. ihren Sprüngen. Die Abschnitte zwischen zwei Sprüngen werden erfasst und die in dieser Zeit zugeführte/entnommene Energie bilanziert. Dies führt wieder zu einer Abschätzung der Wirkungsgrade. 
 
-```{r fig.width=16, message=FALSE, warning=FALSE}
+<!-- Angezeigt werden für jeden Ladezustand zwischen 0% und 100% die Mediane der Wirkungsgrade jeweils in positiver und negativer Richtung getrennt. Werte kleiner als -1 und größer 2 werden ignoriert. Ladeperioden kleiner als 4 werden ebenfalls ignoriert. -->
+<!-- VORSICHT FeHLER: Durch slice wird nur eine zufällige periodenlaenge ausgewählt. ÄNDern!!!!! -->
+
+Derzeit: Alle Wirkungsgrade für die Änderung eines Ladezustands werden gezeigt. 
+
+```{r echo=FALSE, fig.width=16, message=FALSE, warning=FALSE}
 source("04-Auswertungen_Ladezustands_Aenderungen.R")
 plot(p)
 ```
 
 
 
-# Reste #
+<!-- # Reste # -->
 
 
 
@@ -332,7 +339,7 @@ temp %>%
 ```
 
 
-## Tägliche Minima und Maxima identifizieren  - optional ##
+<!-- ## Tägliche Minima und Maxima identifizieren  - optional ## -->
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 # Minima und MAxima markieren frueher R_Min_Max_mark.R
@@ -344,31 +351,31 @@ temp %>%
 # source("04_Auswertungen_Summ_Ent_Ladung_in_Tagesper.R")
 ```
 
-## Perioden zwischen horizontalen Niveaus bilden - Neutrale Zyklen ##
+<!-- ## Perioden zwischen horizontalen Niveaus bilden - Neutrale Zyklen ## -->
 
-Ein _neutraler Zyklus_ ist eine Lade-Entlade-Vorgang der von einem Ladezustand des Akkus ausgehend zu diesem zurückkehrt.
-Für diese ist es sinnvoll, Wirkungsgrade als Verhältnis von Output zu Input zu bilden.
+<!-- Ein _neutraler Zyklus_ ist eine Lade-Entlade-Vorgang der von einem Ladezustand des Akkus ausgehend zu diesem zurückkehrt. -->
+<!-- Für diese ist es sinnvoll, Wirkungsgrade als Verhältnis von Output zu Input zu bilden. -->
 
-"level" legt die Höhe des Ausgangszustands fest, der als Basis für die Berechnung von Wirkungsgraden dient.
-Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (später mit UP bzw. DOWN gekennzeichnet). 
+<!-- "level" legt die Höhe des Ausgangszustands fest, der als Basis für die Berechnung von Wirkungsgraden dient. -->
+<!-- Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (später mit UP bzw. DOWN gekennzeichnet).  -->
 
-### Bildung der Grundfunktionen
+<!-- ### Bildung der Grundfunktionen -->
 
-1. Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe der Daten und l zur Übergabe des Levels
-        
-        Erzeugt die Spalten, die einen Zyklus mit einem Zähler charakteriseren und dessen Länge zählen:
-        zyklus --- len_of_zyklus
+<!-- 1. Initialisieren der Funktion "zyklus_daten_gen(xdata, l)" mit den Parametern xdata zur Übergabe der Daten und l zur Übergabe des Levels -->
 
-2. Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data 
+<!--         Erzeugt die Spalten, die einen Zyklus mit einem Zähler charakteriseren und dessen Länge zählen: -->
+<!--         zyklus --- len_of_zyklus -->
 
-        Erzeugt die innerhalb eines Zyklus konstanten Werte: 
-        max_level : max(ladezustand),
-        min_level : min(ladezustand),
-        hub_level : max_level - min_level,
-        mit_level : (min_level+max_level)/2,
-        durchsatz : hub_level/len_zyklus*12, Einheit  Wh zwischen Min und Max / Stunde
-        signum    : Wenn max_level über dem vorgegebenen Level  "UP" sonst "DOWN"
-        lev       : Der gewählte Level gespeichert in % im Hinblick auf die Verkettung der Daten zu mehreren Levels 
+<!-- 2. Initialisieren der Funktion "zyklus_summen_gen(xdata)"   mit dem Parameter  xdata zur Übergabe von data  -->
+
+<!--         Erzeugt die innerhalb eines Zyklus konstanten Werte:  -->
+<!--         max_level : max(ladezustand), -->
+<!--         min_level : min(ladezustand), -->
+<!--         hub_level : max_level - min_level, -->
+<!--         mit_level : (min_level+max_level)/2, -->
+<!--         durchsatz : hub_level/len_zyklus*12, Einheit  Wh zwischen Min und Max / Stunde -->
+<!--         signum    : Wenn max_level über dem vorgegebenen Level  "UP" sonst "DOWN" -->
+<!--         lev       : Der gewählte Level gespeichert in % im Hinblick auf die Verkettung der Daten zu mehreren Levels  -->
 ```{r eval=FALSE, include=FALSE}
 # NEU_ Perioden zwischen horizontalen Niveaus identifizieren ALT :04_Auswertungen_gen_zu Zyklus mit Level.R
 source("04_Zyklus_Daten_gen.R",local=TRUE)
@@ -380,9 +387,9 @@ source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbos
 ```
 
 
-### Zusammenfassung dieses Vorgangs ###
+<!-- ### Zusammenfassung dieses Vorgangs ### -->
 
-Dazu wird folgende Funktion definiert
+<!-- Dazu wird folgende Funktion definiert -->
 
 ```{r eval=FALSE, include=FALSE}
 zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Levels
@@ -394,16 +401,16 @@ zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Leve
 
 ```
 
-Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus.
+<!-- Sie gibt die Auswertung zurück mit jeweils einem Wert pro Zyklus. -->
 
 
 
 
-# Graphische Auswertungen #
-## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz ##
+<!-- # Graphische Auswertungen # -->
+<!-- ## Darstellung der Wirkungsgrade in Abhängigkeit von Durchsatz ## -->
 
-Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speicher in einer Halbperiode dividiert durch die Dauer der Halbperiode wird als (Energie-)Durchsatz bezeichnet angegeben in Wh/h.
-'lev' bezeichnet dem gewählten level dividiert durch 1000.
+<!-- Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speicher in einer Halbperiode dividiert durch die Dauer der Halbperiode wird als (Energie-)Durchsatz bezeichnet angegeben in Wh/h. -->
+<!-- 'lev' bezeichnet dem gewählten level dividiert durch 1000. -->
 
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
@@ -431,7 +438,7 @@ proj_level %>%
 ```
 
 
-Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung 
+<!-- Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung  -->
 
 ```{r eval=FALSE, include=FALSE, paged.print=FALSE}
 some_levels <- c(3000, 4000, 5000, 6000, 7000, 8000)
@@ -456,7 +463,7 @@ proj_level %>%
 
 
 
-## Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode ##
+<!-- ## Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode ## -->
 
 ```{r eval=FALSE, message=FALSE, include=FALSE, paged.print=FALSE}
 # --------------------------------------------------------------- Proj_Level_Eta_vs_mit_level.R
@@ -464,9 +471,9 @@ source("05_Grafik_Eta_vs_Mitte.R", print.eval=TRUE)
 ```
 
 
-### Das Gleiche mit Aufsammeln von Daten zu mehreren Levels ###
+<!-- ### Das Gleiche mit Aufsammeln von Daten zu mehreren Levels ### -->
 
-Wirkungsgrade eta=0 oder eta > 10000 werden ausgeblendet.
+<!-- Wirkungsgrade eta=0 oder eta > 10000 werden ausgeblendet. -->
 
 ```{r eval=FALSE, include=FALSE}
 some_levels <- c(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,5500, 6000,6500, 7000,7500, 8000, 8500, 9000)

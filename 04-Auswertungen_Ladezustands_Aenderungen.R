@@ -41,24 +41,34 @@ mittlere_wkgr_laden <- zust_verkuerzt %>%
      filter(sgn >0) %>% 
      group_by(ladezustand) %>% 
      mutate(mit_eta = median(eta)) %>% 
-     filter(mit_eta< 2) %>% 
-     filter(mit_eta>-1) %>% 
-     slice(1)
+     #mutate(len_pd = mean(len_pd)) %>% 
+     #filter(mit_eta< 2) %>% 
+     #filter(mit_eta>-1) #%>% 
+     filter(eta > 0) %>% 
+     filter(eta < 2)   %>% 
+     filter(abs(zustands_diff) <= 300) 
+     #filter(len_pd > 4) %>% 
+     #slice(1)
 
 mittlere_wkgr_entladen <- zust_verkuerzt %>% 
   filter(sgn < 0) %>% 
   group_by(ladezustand) %>% 
   mutate(mit_eta = median(eta)) %>% 
-  filter(mit_eta < 2) %>% 
-  filter(mit_eta >-1) %>% 
-  slice(1)
+  #mutate(len_pd = mean(len_pd)) %>% 
+  # filter(mit_eta < 2) %>% 
+  # filter(mit_eta >-1) #%>% 
+  filter(eta > 0) %>% 
+  filter(eta < 2) %>% 
+  filter(abs(zustands_diff) <= 300) 
+  #filter(len_pd < -4) #%>% 
+  #slice(1)
 
 p<- ggplot(data = mittlere_wkgr_laden) +
-  geom_point((mapping = aes(x = ladezustand, y = mit_eta, color=len_pd))) +
   scale_color_gradient2(low="darkblue", midpoint = 0, high="red", space="Lab") +
-  geom_point(data=mittlere_wkgr_entladen,(mapping = aes(x = ladezustand, y = mit_eta, color=len_pd)) ) +
-  geom_smooth(data=mittlere_wkgr_entladen,(mapping = aes(x = ladezustand, y = mit_eta)) ) +
-  geom_smooth(data=mittlere_wkgr_laden,(mapping = aes(x = ladezustand, y = mit_eta)) ) +
+  geom_point((mapping = aes(x = ladezustand, y = eta, color=zustands_diff))) +
+  geom_point(data=mittlere_wkgr_entladen,(mapping = aes(x = ladezustand, y = eta, color=zustands_diff)) ) +
+  geom_smooth(data=mittlere_wkgr_entladen,(mapping = aes(x = ladezustand, y = eta)),color="blue" ) +
+  geom_smooth(data=mittlere_wkgr_laden,(mapping = aes(x = ladezustand, y = eta)),color="red" ) +
   theme_dark()
 
 # ------------------------------------------------------------------------
@@ -72,37 +82,4 @@ p<- ggplot(data = mittlere_wkgr_laden) +
 #   geom_point((mapping = aes(x = ladezustand, y = mit_eta, color=as.character(sgn)))) 
 
 #-------------------------------------------------------------------------
-
-# darst <- zust_verkuerzt %>% 
-#      filter(eta< 2) %>% 
-#      filter(eta>-1) %>% 
-#      filter(zustands_diff <= 300) %>% 
-#      filter(zustands_diff >=-300) 
-#      
-#   ggplot(data = darst) +
-#   geom_point((mapping = aes(x = ladezustand, y = eta, color = zustands_diff))) +
-#   #labs(
-#   #  x      = "Dauer des Ent/Ladevorgangs in h",
-#   #  y      = "Wirkungsgrad",
-#   #  fill   = "Zustandsdifferenz",
-#   #  title  = "Wirkungsgrad waehrend eines kontinuierlichen Lade- oder Entladevorgangs" ,
-#   #  subtitle = subtitle_text ) + 
-#   #scale_color_hue(l=100) +
-#   #scale_y_continuous(breaks = seq(0.0, 3,  by = 0.1)) +
-#   #scale_x_continuous(breaks = seq(0.0, 24.0,  by = 1.0)) +
-#   scale_color_gradient2(midpoint=0, low="darkblue", mid="white", high="red", space="Lab") 
-# 
-#   ggplot(data = mittlere_wkgr) +
-#     geom_point((mapping = aes(x = ladezustand, y = mit_eta))) +
-#     #labs(
-#     #  x      = "Dauer des Ent/Ladevorgangs in h",
-#     #  y      = "Wirkungsgrad",
-#     #  fill   = "Zustandsdifferenz",
-#     #  title  = "Wirkungsgrad waehrend eines kontinuierlichen Lade- oder Entladevorgangs" ,
-#     #  subtitle = subtitle_text ) + 
-#     #scale_color_hue(l=100) +
-#     #scale_y_continuous(breaks = seq(0.0, 3,  by = 0.1)) +
-#     #scale_x_continuous(breaks = seq(0.0, 24.0,  by = 1.0)) +
-#     scale_color_gradient2(midpoint=0, low="darkblue", mid="white", high="red", space="Lab") 
-#   
 
