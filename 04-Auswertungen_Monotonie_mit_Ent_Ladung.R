@@ -1,4 +1,6 @@
 # 04-Auswertungen_Monotonie_mit_Ent_Ladung.R
+# 
+# LAdephasen werden an BAtt_ladung/entladung orientiert, Problem: der Erfolg = LAdezustand gibt dies nur grob wieder
 
 stat_lade_date <- data %>% 
         ungroup() %>% 
@@ -9,7 +11,7 @@ stat_lade_date <- data %>%
                summarize(pos = sum(eins) )
  
 cat("Es werden \n",stat_lade_date$pos[1]," 5min-Intervalle negativer und \n", stat_lade_date$pos[3]," Intervalle positiver Bilanz registiert. \n")
-cat(" ",stat_lade_date$pos[2], "Intervalle sind neutral.")
+cat(" ",stat_lade_date$pos[2], "Intervalle sind neutral.\n")
 
 lade_strecken <- data %>% 
   ungroup() %>% 
@@ -18,12 +20,13 @@ lade_strecken <- data %>%
          eins       = 1,                          #     +++++00000------++++++
          change_fd  = lead(sig_lad)-sig_lad,      #     0000-0000-00000-000000
          change_bd  = sig_lad - lag(sig_lad),     #     00000-0000-00000-00000
-         pos_fd     = ct*sign(change_fd),
-         pos_bd     = ct*sign(change_bd),
-         nr_period  = 0)                      
+         pos_fd     = ct*sign(change_fd),         # pos mit Vorz wenn folgendes      LAdevorzeichen anders
+         pos_bd     = ct*sign(change_bd),         # pos mit Vorz wenn vorhergehendes LAdevorzeichen anders
+         nr_period  = 0)                          # Periodennummer erzeugt
 
-lade_strecken[is.na(lade_strecken)] <- 0
-
+lade_strecken[is.na(lade_strecken)] <- 0         #  Anfang in Ordnung bringen wo lag versagt
+lade_strecken$change_bd[1] <- lade_strecken$sig_lad[1]
+lade_strecken$pos_bd[1]    <- 1*sign(lade_strecken$change_bd[1])
 vec_pos_fd <- lade_strecken %>% 
        filter(pos_fd != 0) 
 vec_pos_fd <- vec_pos_fd$pos_fd
@@ -35,54 +38,42 @@ for (i in 1: length(vec_pos_bd)){
    lade_strecken <- lade_strecken %>% 
               mutate(nr_period = ifelse(abs(vec_pos_bd[i]) <= ct, vec_pos_bd[i],nr_period))
 }
-# Jetzt sind die Strecken konstanten Ladevorzeichens mit der Position ihres Beginns markiert
+# Jetzt sind die Strecken konstanten Ladevorzeichens mit der Position ihres Beginns markiert 
 
-lade_strecken_summ <- lade_strecken %>% 
+lade_strecken_summ <- lade_strecken %>%                       # über die Perioden wird die Nettoladung summiert
      ungroup() %>% 
      group_by(abs(nr_period)) %>% 
          mutate (summe_nettoladung = sum(netto_lad)) %>% 
-     slice(c(n())) %>% 
+     slice(c(n())) %>%                                       # jeweils die letzte Zeile einer monotonieperiode wird ausgewählt
+     select(-netto_lad) %>% 
      ungroup()
 
 lade_strecken_summ <- lade_strecken_summ %>% 
-     mutate(zustandsdiff = ladezustand - lag(ladezustand),
-            strecken_laenge = ct - lag(ct),
-            eta             = zustandsdiff/summe_nettoladung)
+     ungroup() %>% 
+     mutate(newct = cumsum(eins),
+            zustandsdiff    = ifelse(newct > 1, ladezustand - lag(ladezustand), ladezustand-5800),  # mit 5800 beginnt die Beoabachtung
+            strecken_laenge = ifelse(newct > 1, ct - lag(ct), ct),
+            eta             = (zustandsdiff*batt_kapazitaet/summe_nettoladung)^sign(zustandsdiff)) # Korr fuer tatsächlichen Ladezustand
 
+lade_strecken_plot <- lade_strecken_summ %>% 
+      filter(eta <= 3) %>% 
+      filter(eta >= 0) %>% 
+      filter(strecken_laenge > 3)
 
+subtitle_text <- paste("Zugrundegelegt: Ladezustand aus Systemmeldung umgerechnet auf 100% = ", as.character(10*batt_kapazitaet)," kWh." )
 
-
-# kuerze_ladestrecken_temp <- lade_strecken %>% 
-#           select(-batt_ladung,-batt_entladung)
-
-# anzahl_lade_strecken <- lade_strecken %>% 
-#   ungroup() %>% 
-#   group_by(change) %>% 
-#   summarise(wechsel = sum(eins))
-
-# -2 heisst entladung folgt auf ladung
-# -1 heisst entladung folgt neutral oder neutral folgt auf ladung
-# keine Aenderung
-#  1 heisst ladung folgt auf neutral oder neutral auf entladung
-#  2 heisst ladung folgt auf Enladung
-
-# print.data.frame(anzahl_lade_strecken)
-# 
-# lade_strecken_short <- lade_strecken %>% 
-#       mutate(sprung = abs(sign(change))*ct) %>% 
-#       filter(sprung != 0) %>% 
-#       mutate(laenge = lead(sprung) - sprung) %>% 
-#       ungroup()
-# 
-# stat_lade_strecken <-  lade_strecken_short %>% 
-#       group_by(laenge) %>% 
-#       summarise(anzahl_laengen = sum(eins))
-# 
-# stat_lade_strecken$anzahl_laengen
-# 
-# 
-# ggplot(data = lade_strecken_short) +
-#   geom_histogram((mapping = aes(x = laenge)), binwidth= 3)
-
+p <- ggplot(data = lade_strecken_plot) +
+   geom_point((mapping = aes(x = strecken_laenge/12, y = eta, color = zustandsdiff))) +
+   labs(
+     x      = "Dauer des Ent/Ladevorgangs in h",
+     y      = "Wirkungsgrad",
+     fill   = "Zustandsdifferenz",
+     title  = "Wirkungsgrad waehrend eines kontinuierlichen Lade- oder Entladevorgangs" ,
+     subtitle = subtitle_text ) + 
+   scale_color_hue(l=100) +
+   scale_y_continuous(breaks = seq(0.0, 3,  by = 0.1)) +
+   scale_x_continuous(breaks = seq(0.0, 24.0,  by = 1.0)) +
+   scale_color_gradient2(midpoint=0, low="darkblue", mid="white", high="red", space="Lab") 
+   
 
 

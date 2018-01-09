@@ -1,13 +1,13 @@
 ---
 title: "PV - Datenanalyse"
 output:
+  html_notebook: default
+  html_document: default
+  df_print: paged
   pdf_document:
     toc: true
     number_sections: true
     toc_depth: 3
-  html_document: default
-  df_print: paged
-  html_notebook: default
   word_document: default
 date: "`r format(Sys.time(), '%d %B %Y')`"
 ---
@@ -32,6 +32,13 @@ Einheiten:
 - Alle anderen Größen in W außer 
 - Ladezustand in % der Batteriekapazität. Laut Herstellerangabe beträgt diese 9,8 kWh, von denen 9,3 KWh verfügbar sind.
 
+
+```{r echo=FALSE}
+# Grunddaten des Sytems:
+batt_kapazitaet <- 0.93 # von 10 kWh
+cat("Im folgenden wird mit einer Batteriekapazität von",batt_kapazitaet,"x 10 kWh gerechnet.\n")
+```
+Es wird sich herausstellen, dass dieser Wert für die Abschätzung von Teilwirkungsgraden eine wesentliche Bedeutung hat.
 
 # Technische Vorbereitungen #
 
@@ -63,7 +70,7 @@ source("03-Files-einlesen.R")
 ### Ergänzende Spaltenoperationen und Datenkontrollen ###
 
 a)  Die neue Spalte 'ct' zählt die Datenzeilen 
-b)  Über 'ladezustand' läuft eine Glättungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
+b)  ___Ausgeschaltet___: Über 'ladezustand' läuft eine Glättungsfunktion, um einzelne Ausfaelle in den Messungen zu beseitigen.
 c) 'month', 'day' und 'hour' werden aus der Variablen 'zeit' extrahiert und im Datumsformat "yyyy-mm-dd" bzw. als Zahl 0 - 23 gespeichert.
 d) 'ladediff' wird als Differenz zwischen dem aktuellen Zustand und dem vorangegangenen Ladezustand berechnet.
 e)  von W in Wh werden umgerechnet:
@@ -81,10 +88,10 @@ source("03-Spalten-bearbeiten.R")
 ```
 
 Die Rohdaten werden gespalten in __data__ mit den Variablen:
-zeit, batt_ladung, batt_entladung, ladezustand, month, week, day, hour, ladediff, ct
+zeit, batt_ladung, batt_entladung, ladezustand, month, week, day, hour, ladediff, ct, ladezustand_Wh
 
 sowie __verbrauch__ mit den Variablen:
-zeit, leistung.pv, netzeinspeisung, netzbezug, batt_ladung, batt_entladung, ladezustand, month, week, day, hour, ladediff,ct
+zeit, leistung.pv, netzeinspeisung, netzbezug, batt_ladung, batt_entladung, ladezustand, month, week, day, hour, ladediff,ct, ladezustand_Wh
 
 #  Auswertungen # 
 
@@ -123,7 +130,7 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
     select(zeit, month, week, day,hour, ladezustand) 
   ggplot(batt.zustand) +
    #geom_bar(mapping = aes(x = ladezustand, fill=month ))   
-   stat_bin(mapping = aes(x = ladezustand, fill=month, order=month ), bins = 25) #+
+   stat_bin(mapping = aes(x = ladezustand, fill=month), bins = 25) #+
    #scale_y_log10()
    #scale_fill_brewer(palette="red")
 ```
@@ -133,7 +140,7 @@ Das folgende Diagramm zählt die Häufigkeit, mit der die Ladezustände der Batt
 
 Durch die Annahme von zwei (konstanten) Wirkungsgraden für den Ladevorgang und den Entladevorgang kann aus den gemessenen Werten für die Batterieladung und -entladung fiktiv ein Ladezustand der Batterie berechnet und mit den Messwerten für den Ladezustand verglichen werden. Durch Auswahl der besten Approximation im Sinn einer zu wählenden Norm ergibt sich eine Schätzung für die beiden Wirkungsgrade.
 
-```{r echo=FALSE, fig.width=16, warning=FALSE}
+```{r eval=FALSE, fig.width=16, warning=FALSE, include=FALSE}
 function.names <- c("norm_max_norm","norm_summen_norm", "norm_2wurzel_aus_2pot","norm_3wurzel_aus_3pot") # Abstandsnormen
 num <- 3  # Waehle aus
 waehle_norm_fu<- get(function.names[num])
@@ -142,18 +149,28 @@ cat("Gewählte Abstandsnorm:", function.names[num]," \n")
 source("04_Modell_Ent_Lade_Wirkungsgrad.R") # 
 ```
 
-### Visualisierung der Aproxximationsqualität ###
 
-```{r echo=FALSE, fig.height=16, fig.width=16}
+
+
+```{r eval=FALSE, fig.height=16, fig.width=16, include=FALSE}
 ggplot(Mat_EtaPaare, aes(x = eta_1 , y = eta_2, z = fehler)) +
   geom_point() +
   geom_contour(aes(colour=..level..), bins=50) +
   scale_color_gradient(low="red", high="blue") +
   geom_line(aes(x= eta_1, y=eta_1_max*eta_2_max/eta_1), color ="green")
-  #coord_cartesian(xlim = c(0.975, 1.000), ylim = c(0.688,0.710))
+  # Die Modellierung mit Hilfe zweier konstanter Wirkungsgrade ist ersichtlich wenig trennscharf: 
+  # Die beste Approxiamtionsqualität wird entlang einer Kurve erreicht, die annähernd durch das Produkt eta_1 mal eta_2 = constant   
+  # beschrieben wird. 
+  # Zweiter Versuch - Modellierung wie oben, Approximation mit Hilfe von NLS
+
 ```
 
-Die Modellierung mit Hilfe zweier konstanter Wirkungsgrade ist ersichtlich wenig trennscharf: Die beste Approxiamtionsqualität wird entlang einer Kurve erreicht, die annähernd durch das Produkt eta_1 mal eta_2 = constant beschrieben wird. 
+Mit Hilfe nichtlinearer Anpassung mit der Methode der kleinsten Quadrate erhält man Wirkungsgrade:
+```{r echo=FALSE}
+source("04_NLS_fuer_Ent_Lade_Wirkungsgrad.R") #
+```
+
+### Visualisierung der Aproxximationsqualität ###
 
 Zum Vergleich: Verlauf des gemessenen und des modellierten Ladezustands
 
@@ -171,6 +188,7 @@ ggplot(lade_data) +
 ```
 
 Aus dem Diagramm lässt sich erkennen, dass die Modellvorstellung eines konstanten Wirkungsgrades offensichtlich nur sehr grob gültig ist. 
+Zu vermuten sind geänderte Wirkungsgrade im Bereich der beiden extremen LAdezustände nahe 100 bzw. 0 %.
 
 
 
@@ -178,11 +196,28 @@ Aus dem Diagramm lässt sich erkennen, dass die Modellvorstellung eines konstant
 
 Die beiden oben gefundenen Wirkungsgrad für das Laden der Batterie und für den Entladevorgang sollten sich auch wiederfinden lassen, wenn man Perioden beobachtet, in den die Batterie monoton geladen oder entladen wird. Dies ist das Ziel der folgenden Auswertung.
 
-```{r}
-#source("04_Auswertungen_Monotone_Entladung_finden.R")
-# ZIEL 
+### Monotonie im Ladeverhalten ###
+
+Es werden die zeitlichen Strecken erfasst, in denen die Ladebilanz (batt_ladung-batt_entladung) konstantes Vorzeichen (+/-1 oder 0) hat.Das Resultat des Ladevorgangs wird mit der Änderung des Ladezustands verglichen. Problematisch ist dabei, dass die Erfassung des Ladezustands wesentlich gröber ist (Schritte von 100 Wh) als die des Ladevorgangs. 
+
+```{r echo=FALSE, fig.width=16, message=FALSE, warning=FALSE, paged.print=TRUE}
 source("04-Auswertungen_Monotonie_mit_Ent_Ladung.R")
+plot(p+ theme_dark())
 ```
+
+
+### Bilanzierung der Differenzen im Ladezustand im Vergleich zu den Lade-/Entladevorgängen ###
+
+```{r fig.width=16, message=FALSE, warning=FALSE}
+source("04-Auswertungen_Ladezustands_Aenderungen.R")
+plot(p)
+```
+
+
+
+# Reste #
+
+
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=TRUE}
 
@@ -299,7 +334,7 @@ temp %>%
 
 ## Tägliche Minima und Maxima identifizieren  - optional ##
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 # Minima und MAxima markieren frueher R_Min_Max_mark.R
 # source("04_Auswertungen_Min_Max_tgl_Per.R")
 #-----------------------------------------------------------------------------------
@@ -334,7 +369,7 @@ Ein solcher Zyklus kann jeweils über oder unter dem Ausgangslevel bleiben (spä
         durchsatz : hub_level/len_zyklus*12, Einheit  Wh zwischen Min und Max / Stunde
         signum    : Wenn max_level über dem vorgegebenen Level  "UP" sonst "DOWN"
         lev       : Der gewählte Level gespeichert in % im Hinblick auf die Verkettung der Daten zu mehreren Levels 
-```{r include=FALSE}
+```{r eval=FALSE, include=FALSE}
 # NEU_ Perioden zwischen horizontalen Niveaus identifizieren ALT :04_Auswertungen_gen_zu Zyklus mit Level.R
 source("04_Zyklus_Daten_gen.R",local=TRUE)
 #-----------------------------------------------------------------------------------
@@ -349,7 +384,7 @@ source("04_Auswertungen_Proj_1_wert_pro_levelpd.R",local=TRUE, echo= TRUE,verbos
 
 Dazu wird folgende Funktion definiert
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 zyklen_bilden <- function(xdata, x) {   # xdata =Datensatz, x Vorgabe eines Levels
   xdata = zyklus_daten_gen(xdata, x)
   xdata = zyklus_summen_gen(xdata,x)
@@ -371,7 +406,7 @@ Die maximale Energiedifferenz  zwischen höchsten und niedrigsten Wert im Speich
 'lev' bezeichnet dem gewählten level dividiert durch 1000.
 
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 #-------------------------------------------------------- 
 # Auswertung der Zyklen
 
@@ -398,7 +433,7 @@ proj_level %>%
 
 Duch Wahl mehrerer Levelwerte erhält man folgende Darstellung 
 
-```{r paged.print=FALSE}
+```{r eval=FALSE, include=FALSE, paged.print=FALSE}
 some_levels <- c(3000, 4000, 5000, 6000, 7000, 8000)
 proj_level <- tibble()
 for ( level in some_levels) {          # zu jedem level den Datensatz auswerten und reduzieren auf einen Wert pro Periode
@@ -423,7 +458,7 @@ proj_level %>%
 
 ## Darstellung der Wirkungsgrade in Abhängigkeit von der Mitte der Halbperiode ##
 
-```{r message=FALSE, paged.print=FALSE}
+```{r eval=FALSE, message=FALSE, include=FALSE, paged.print=FALSE}
 # --------------------------------------------------------------- Proj_Level_Eta_vs_mit_level.R
 source("05_Grafik_Eta_vs_Mitte.R", print.eval=TRUE) 
 ```
@@ -433,7 +468,7 @@ source("05_Grafik_Eta_vs_Mitte.R", print.eval=TRUE)
 
 Wirkungsgrade eta=0 oder eta > 10000 werden ausgeblendet.
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 some_levels <- c(1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,5500, 6000,6500, 7000,7500, 8000, 8500, 9000)
 proj_level <- tibble()
 for (level in some_levels) {

@@ -1,12 +1,12 @@
 # 04_Modell_Ent_Lade_Wirkungsgrad.R 
 
 lade_data <- data %>% 
-  select(zeit, month, week, day, hour, ct, batt_ladung, batt_entladung, ladezustand ) %>% 
-  mutate(ladezustand_Wh = 0.98 * ladezustand) %>% 
+  select(zeit, month, week, day, hour, ct, batt_ladung, batt_entladung, ladezustand, ladezustand_Wh) %>% 
+  #mutate(ladezustand_Wh = batt_kapazitaet * ladezustand) %>% 
   mutate(korr_ladung = batt_ladung) %>% 
   select(-batt_ladung)
 
-lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+5800    # korrekt wäre, 5800/eta_1, letzteres ist aber noch unbekannt
+lade_data$korr_ladung[1]<- lade_data$korr_ladung[1]+lade_data$ladezustand_Wh[1]  # korrekt wäre, + ..../eta_1, letzteres ist aber noch unbekannt
 
 # -------------------------------------------------------------------
 

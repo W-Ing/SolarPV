@@ -7,6 +7,7 @@ data <- data %>%
          leistung.stp   = leistung.stp/12,
          netzeinspeisung= netzeinspeisung/12,
          netzbezug      = netzbezug/12    )  # Jetzt sind die Daten in Wh umgerechnet, die jeweils in 5 min erbracht werden
+
 # abgeleitete Groessen bilden
 
 data <- data %>%                            
@@ -16,6 +17,7 @@ data <- data %>%
     day      = as_date(zeit),
     hour     = as.numeric(format(zeit,"%H")), # gibt num
     ladediff = ladezustand- lag(ladezustand)) # diff geht nicht wg laenge
+
 data[is.na(data)] <- 0
 
 source("03_Quellen_pruefen.R")
@@ -29,6 +31,13 @@ cat('Der Datensatz enthaelt jetzt ',max(data$ct), 'Zeilen.\n')
 # -------------------------------------------------------------------
 cat("\n")
 cat('Erzeuge Tabelle verbrauch \n')
+
+#
+# LAdezustand auch in Wh speichern - verwende batt_kapazitaet
+
+data <- data %>% 
+  mutate(ladezustand_Wh = ladezustand * batt_kapazitaet)
+#--------------------------------------------------------------------------
 verbrauch <- data
 verbrauch <- verbrauch %>% 
      select(-leistung.stp)
@@ -40,9 +49,9 @@ cat('Loesche aus data Spalten: ', loesche, '.\n')
 
 
 # -----------------------------------------------------------------------------
-# Ladezustand glaetten
- data[is.na(data)] <- 0
- data <- data %>% 
-          mutate(ladezustand = rollmed(lead(ladezustand,schieben)))
- data[is.na(data)] <- 0
+# # Ladezustand glaetten
+#  data[is.na(data)] <- 0
+#  data <- data %>% 
+#           mutate(ladezustand = rollmed(lead(ladezustand,schieben))) 
+#  data[is.na(data)] <- 0
 # ----------------------------------------------------------------------------- 
